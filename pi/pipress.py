@@ -44,7 +44,7 @@ def simplescan():
   print("Done")
 
 
-def ingotscan(is_reverse):
+def ingotscan():
   home_uri = os.path.expanduser("~pi")
   directory = os.path.join(home_uri, "Warez", "Scans", "bars")
   filename_suffix = str(datetime.date.today())
