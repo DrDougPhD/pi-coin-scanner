@@ -10,7 +10,7 @@ app = web.application(urls, globals())
 
 
 class hello:        
-  def GET(self, filename_prefix):
+  def GET(self):
     home_uri = os.path.expanduser("~kp")
     directory = os.path.join(home_uri, "Warez", "Scans", "bars")
     

@@ -62,13 +62,10 @@ def ingotscan(is_reverse):
   return uri
 
 
+import requests
 def ingotsplit(img_urls):
-  directory = os.path.dirname(img_urls[0])
   print("Splitting images")
-  subprocess.call([
-    "bash", "bullionScanNMerge.sh", directory
-  ])
-  print("Done splitting images")
+  requests.get("http://power:8989/")
 
 
 class TrinaryState:
