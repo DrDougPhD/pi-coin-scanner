@@ -16,6 +16,17 @@
 TMP_DIR="/tmp/bullion"
 [ -d ${TMP_DIR} ] || mkdir ${TMP_DIR}
 
+LOCK_FILE=${TMP_DIR}/.lock
+
+# Test to see if a lock file exists in the temp directory. If so, abort 
+#  execution.
+if [ -f ${LOCK_FILE} ]
+then
+  exit 1
+fi
+
+touch ${LOCK_FILE}
+
 # multicrop will split the raw scan based on the unique regions of the raw
 #   image, where each region corresponds to one ingot. The output files will be
 #   of the format:
