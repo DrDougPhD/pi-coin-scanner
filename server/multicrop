@@ -1,0 +1,8 @@
+#!/bin/bash
+# Please download the multicrop script available from here:
+#  http://www.fmwconcepts.com/imagemagick/multicrop/
+# I cannot include it here due to copyright.
+echo "##############################################################################"
+echo "Please download the multicrop script from the following URL:"
+echo "  http://www.fmwconcepts.com/imagemagick/multicrop/"
+echo "##############################################################################"
