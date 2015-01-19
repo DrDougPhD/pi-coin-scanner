@@ -17,10 +17,6 @@
 body {
   background: white;
   margin: 10px;
-}
-
-body,
-input {
   font-family: sans-serif;
   font-size: 10pt;
   color: black;
@@ -40,14 +36,6 @@ td {
   position: absolute;
   bottom: 10px;
   left: 10px;
-}
-
-#input {
-  margin-top: 0.5em;
-}
-
-#inbox .message {
-  padding-top: 0.25em;
 }
 
 #nav {

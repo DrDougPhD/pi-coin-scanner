@@ -39,7 +39,7 @@ class Application(tornado.web.Application):
     def __init__(self):
         handlers = [
             (r"/", MainHandler),
-            (r"/chatsocket", ChatSocketHandler),
+            (r"/socket", ProgressSocketHandler),
             (r"/execute", ImageProcessingHandler),
         ]
         settings = dict(
@@ -53,9 +53,9 @@ class Application(tornado.web.Application):
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
-        self.render("index.html", messages=ChatSocketHandler.cache)
+        self.render("index.html", messages=ProgressSocketHandler.cache)
 
-class ChatSocketHandler(tornado.websocket.WebSocketHandler):
+class ProgressSocketHandler(tornado.websocket.WebSocketHandler):
     waiters = set()
     cache = []
     cache_size = 200
@@ -65,11 +65,11 @@ class ChatSocketHandler(tornado.websocket.WebSocketHandler):
         return {}
 
     def open(self):
-        ChatSocketHandler.waiters.add(self)
+        ProgressSocketHandler.waiters.add(self)
         print("Added one waiter")
 
     def on_close(self):
-        ChatSocketHandler.waiters.remove(self)
+        ProgressSocketHandler.waiters.remove(self)
         print("Closed one waiter")
 
     @classmethod
@@ -99,8 +99,8 @@ class ChatSocketHandler(tornado.websocket.WebSocketHandler):
             "body": parsed["body"],
             }
 
-        ChatSocketHandler.update_cache(chat)
-        ChatSocketHandler.send_updates(chat)
+        ProgressSocketHandler.update_cache(chat)
+        ProgressSocketHandler.send_updates(chat)
 
 
 def ingot_split():
@@ -119,8 +119,8 @@ def ingot_split():
       'id': str(uuid.uuid4()),
       'body': line,
     }
-    ChatSocketHandler.update_cache(update)
-    ChatSocketHandler.send_updates(update)
+    ProgressSocketHandler.update_cache(update)
+    ProgressSocketHandler.send_updates(update)
     print(line)
 
   # Process has terminated. Images can now be displayed.
