@@ -85,7 +85,7 @@ class ProgressSocketHandler(tornado.websocket.WebSocketHandler):
             try:
                 if "html" not in chat:
                   chat["html"] = tornado.escape.to_basestring(
-                    waiter.render_string("message.html", message=chat)
+                    waiter.render_string("console_line.html", message=chat)
                   )
                 waiter.write_message(chat)
             except:
