@@ -8,10 +8,10 @@ import RPi.GPIO as GPIO
 import time
 import datetime
 import subprocess
+import requests
 import os
 from unique_files import create_unique_filename
 from binarystate import BinaryState
-
 
 # Set labeled pin 18 to input. This is physical pin 12.
 GPIO.setmode(GPIO.BCM)
@@ -28,19 +28,24 @@ EXT="tiff"
 
 
 def simplescan():
-  home_uri = os.path.expanduser("~pi")
-  directory = os.path.join(home_uri, "Warez", "Scans")
-  filename_suffix = str(datetime.date.today())
-  uri = create_unique_filename(directory=directory, suffix=filename_suffix, ext=EXT)
-
-  print("Scanning image to {0}".format(uri))
-  with open(uri, 'w') as f:
-    subprocess.call([
-      "scanimage",
-      "--device-name", "hpaio:/usb/Deskjet_F4100_series?serial=CN7CM6G1Q104TJ",
-      "--resolution", "300",
-      "--format", EXT,
-    ], stdout=f)
+  print("Scanning image...")
+  shell_cmds = [
+    "scanimage",
+    "--device-name", "hpaio:/usb/Deskjet_F4100_series?serial=CN7CM6G1Q104TJ",
+    "--resolution", "300",
+    "--format", EXT
+  ]
+  with subprocess.Popen(shell_cmds, stdout=subprocess.PIPE) as p:
+    # do stuff.
+    url = 'http://power:8912/rawscan'
+    scanned_image = {
+      #'file': ('scan.tiff', p.stdout.read())
+      'file': p.stdout
+    }
+    start = time.time()
+    r = requests.post(url, files=scanned_image)
+    duration = time.time() - start
+    print("Uploading took {0} seconds".format(duration))
   print("Done")
 
 
