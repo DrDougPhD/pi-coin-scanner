@@ -106,8 +106,10 @@ class IngotProcessorHandler(tornado.web.RequestHandler):
     print(type(self.request.files["file"][0]))
     print(self.request.files["file"][0].keys())
 
+    print("#"*80)
     if not IngotProcessorHandler.images:
       print("Obverse image received!")
+      print("-----------------------")
       IngotProcessorHandler.images = IngotProcessor(
         obverse_img=self.request.files["file"][0]
       )
@@ -118,6 +120,7 @@ class IngotProcessorHandler(tornado.web.RequestHandler):
 
     else:
       print("Reverse image received!")
+      print("-----------------------")
       IngotProcessorHandler.images.addReverse(self.request.files["file"][0])
       merger = threading.Thread(
         target=IngotProcessor.images.merge
