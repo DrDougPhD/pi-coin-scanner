@@ -84,6 +84,7 @@ class StatusSocketHandler(tornado.websocket.WebSocketHandler):
 
 class RawScanHandler(tornado.web.RequestHandler):
   def post(self):
+    print("SHOULD NOT BE POSTING HERE")
     print(self.request.files.keys())
     
     # Split the image files.
@@ -97,3 +98,7 @@ class RawScanHandler(tornado.web.RequestHandler):
 class IngotProcessorHandler(tornado.web.RequestHandler):
   def post(self):
     print(self.request.files.keys())
+    print(dir(self.request.files))
+    print(type(self.request.files))
+    print(type(self.request.files["file"][0]))
+    print(self.request.files["file"][0].keys())
