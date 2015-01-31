@@ -5,10 +5,10 @@ logging.basicConfig(
   filename='/tmp/server.log',
   filemode='w'
 )
-logging.addHandler(logging.StreamHandler())
-logger = logging.getLogger("piCoinScanner.server.driver")
+logger = logging.getLogger("piCoinScanner.server")
+logger.addHandler(logging.StreamHandler())
 
-
+import tornado
 import tornado.ioloop
 import tornado.web
 from server import RawScanHandler

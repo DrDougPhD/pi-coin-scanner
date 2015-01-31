@@ -84,7 +84,7 @@ class StatusSocketHandler(tornado.websocket.WebSocketHandler):
 
 class RawScanHandler(tornado.web.RequestHandler):
   def post(self):
-    print(self.request.files)
+    print(self.request.files.keys())
     
     # Split the image files.
     # Store the split images in temporary files.

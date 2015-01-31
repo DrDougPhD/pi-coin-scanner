@@ -89,7 +89,7 @@ if __name__ == "__main__":
       if bool(toggle):
         # Silver ingot scanning is underway.
         print("Scanning ingot")
-        url = 'http://power:8912/rawscan'
+        url = 'http://power:8912/ingotscan'
 
         with open(SAMPLE_FILE) as f:
           scanned_image = {
