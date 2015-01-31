@@ -222,4 +222,6 @@ class IngotProcessor:
     return self.getDirname(is_obverse=False)
 
   def __bool__(self):
+    print("Is the system waiting for a reverse image?")
+    print(self.is_waiting_for_reverse)
     return self.is_waiting_for_reverse
