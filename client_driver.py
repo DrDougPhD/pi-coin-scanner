@@ -101,9 +101,9 @@ if __name__ == "__main__":
         duration = time.time() - start
         print("Uploading took {0} seconds".format(duration))
 
-    else:
-      # Perform a simple scan.
-      print("Scanning document")
+      else:
+        # Perform a simple scan.
+        print("Scanning document")
 
 
     if toggle.has_changed(b):
