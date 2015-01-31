@@ -107,7 +107,7 @@ class IngotProcessorHandler(tornado.web.RequestHandler):
     print(self.request.files["file"][0].keys())
 
     print("#"*80)
-    if not IngotProcessorHandler.images:
+    if IngotProcessorHandler.images is None:
       print("Obverse image received!")
       print("-----------------------")
       IngotProcessorHandler.images = IngotProcessor(
