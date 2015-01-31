@@ -100,12 +100,6 @@ class IngotProcessorHandler(tornado.web.RequestHandler):
   images = None
 
   def post(self):
-    print(self.request.files.keys())
-    print(dir(self.request.files))
-    print(type(self.request.files))
-    print(type(self.request.files["file"][0]))
-    print(self.request.files["file"][0].keys())
-
     print("#"*80)
     if IngotProcessorHandler.images is None:
       print("Obverse image received!")
@@ -136,7 +130,6 @@ class IngotProcessor:
    
   def __init__(self, obverse_img):
     self.session_id = datetime.now().strftime(IngotProcessor.DATETIME_FMT)
-    self.is_waiting_for_reverse = True
 
     # Make session directories for output scans.
     print("Creating session directories")
@@ -160,7 +153,6 @@ class IngotProcessor:
   def addReverse(self, reverse_img):
     # Write file to disk.
     self.reverse_path = self._write(img=reverse_img, is_obverse=False)
-    self.is_waiting_for_reverse = False
 
   def splitObverse(self):
     """This is called by the server to split the obverse image."""
@@ -223,8 +215,3 @@ class IngotProcessor:
 
   def getReverseDirname(self):
     return self.getDirname(is_obverse=False)
-
-  def __bool__(self):
-    print("Is the system waiting for a reverse image?")
-    print(self.is_waiting_for_reverse)
-    return self.is_waiting_for_reverse
