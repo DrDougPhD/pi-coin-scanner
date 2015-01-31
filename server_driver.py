@@ -20,7 +20,7 @@ from server import IngotProcessorHandler
 application = tornado.web.Application([
   (r"/",          MainHandler),
   (r"/rawscan",   RawScanHandler),
-  (r"/ingotscan", IngotProcessorHandler
+  (r"/ingotscan", IngotProcessorHandler),
   (r"/socket",    StatusSocketHandler),
 ], debug=True)
 
