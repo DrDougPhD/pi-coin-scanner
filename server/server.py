@@ -96,4 +96,4 @@ class RawScanHandler(tornado.web.RequestHandler):
 
 class IngotProcessorHandler(tornado.web.RequestHandler):
   def post(self):
-    print(self.request.files)
+    print(self.request.files.keys())
