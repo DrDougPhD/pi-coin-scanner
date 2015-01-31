@@ -63,6 +63,13 @@ from pi import BinaryState
 import requests
 import time
 
+# Set labeled pin 18 to input. This is physical pin 12.
+GPIO.setmode(GPIO.BCM)
+BUTTON_PIN = 18
+GPIO.setup(BUTTON_PIN, GPIO.IN)
+
+TOGGLE_PIN = 17
+GPIO.setup(TOGGLE_PIN, GPIO.IN)
 
 SAMPLE_FILE="/home/pi/2014-12-28_0.tiff"
 
