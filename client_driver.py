@@ -63,6 +63,10 @@ from pi import BinaryState
 import requests
 import time
 
+
+SAMPLE_FILE="/home/pi/2014-12-28_0.tiff"
+
+
 if __name__ == "__main__":
   os.setgid(1000)
   os.setuid(1000)
@@ -78,6 +82,7 @@ if __name__ == "__main__":
       if bool(toggle):
         # Silver ingot scanning is underway.
         print("Scanning ingot")
+        """
         url = 'http://power:8912/rawscan'
 
         with open(SAMPLE_FILE) as f:
@@ -89,6 +94,7 @@ if __name__ == "__main__":
         r = requests.post(url, files=scanned_image)
         duration = time.time() - start
         print("Uploading took {0} seconds".format(duration))
+        """
 
     else:
       # Perform a simple scan.
