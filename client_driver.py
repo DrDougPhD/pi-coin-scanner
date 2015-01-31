@@ -89,7 +89,6 @@ if __name__ == "__main__":
       if bool(toggle):
         # Silver ingot scanning is underway.
         print("Scanning ingot")
-        """
         url = 'http://power:8912/rawscan'
 
         with open(SAMPLE_FILE) as f:
@@ -101,7 +100,6 @@ if __name__ == "__main__":
         r = requests.post(url, files=scanned_image)
         duration = time.time() - start
         print("Uploading took {0} seconds".format(duration))
-        """
 
     else:
       # Perform a simple scan.
