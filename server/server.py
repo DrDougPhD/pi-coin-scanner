@@ -81,6 +81,7 @@ class StatusSocketHandler(tornado.websocket.WebSocketHandler):
         StatusSocketHandler.update_cache(chat)
         StatusSocketHandler.send_updates(chat)
 
+RAW_FILE_STORAGE = "/home/kp/Warez/Scans"
 
 class RawScanHandler(tornado.web.RequestHandler):
   def post(self):
@@ -96,9 +97,127 @@ class RawScanHandler(tornado.web.RequestHandler):
     #   (TODO) Wait for approval of files to re-attempt splitting and merging.
 
 class IngotProcessorHandler(tornado.web.RequestHandler):
+  images = None
+
   def post(self):
     print(self.request.files.keys())
     print(dir(self.request.files))
     print(type(self.request.files))
     print(type(self.request.files["file"][0]))
     print(self.request.files["file"][0].keys())
+
+    if not IngotProcessorHandler.images:
+      IngotProcessorHandler.images = IngotProcessor(
+        obverse_img=self.request.files["file"][0]
+      )
+      splitter = threading.Thread(
+        target=IngotProcessor.images.splitObverse
+      )
+      splitter.start()
+
+    else:
+      IngotProcessorHandler.images.addReverse(self.request.files["file"][0])
+      merger = threading.Thread(
+        target=IngotProcessor.images.merge
+      )
+      merger.start()
+
+      IngotProcessorHandler.images = None
+
+
+class IngotProcessor:
+  STORAGE_DIR = os.path.join(RAW_FILE_STORAGE, "Bars")
+  DATETIME_FMT = "%Y-%m-%d %Hh %Mm %Ss"
+   
+  def __init__(self, obverse_img):
+    self.session_id = datetime.now().strftime(IngotProcessor.DATETIME_FMT)
+    self.is_waiting_for_reverse = True
+
+    # Make session directories for output scans.
+    logger.debug("Creating session directories")
+    logger.debug(self.getObverseDirname())
+    os.makedirs(path=self.getObverseDirname())
+    logger.debug(self.getReverseDirname())
+    os.makedirs(path=self.getReverseDirname())
+
+    # Write file to disk.
+    self.obverse_path = self._write(img=obverse_img, is_obverse=True)
+
+  def _write(self, img, is_obverse):
+    filename = "{0}.tiff".format("obverse" if is_obverse else "reverse")
+    path = os.path.join(self.getSessionDirname(), filename)
+    logger.debug("Writing file to {0}".format(path))
+    with open(path, 'w') as f:
+      f.write(img['body'])
+    logger.debug("Finished writing file")
+    return path
+
+  def addReverse(self, reverse_img):
+    # Write file to disk.
+    self.reverse_path = self._write(img=reverse_img, is_obverse=False)
+    self.is_waiting_for_reverse = False
+
+  def splitObverse(self):
+    """This is called by the server to split the obverse image."""
+    logger.debug("Splitting obverse image")
+    self._split(img=self.obverse_path, is_obverse=True)
+
+  def merge(self):
+    logger.debug("Splitting reverse image")
+    self._split(img=self.reverse_path, is_obverse=False)
+    self._merge()
+
+  def _merge(self):
+    logger.debug("Merging split images")
+
+  def _split(self, img, is_obverse):
+    # multicrop -c West -u 3 -f 15 "$f" "${TMP_DIR}/${img_filename}"
+    p = subprocess.Popen([
+        "bash", "multicrop",
+        '-c', 'West',
+        '-u', '3',
+        '-f', '15',
+        img, self._getMulticropDestination(is_obverse)
+      ],
+      stdout=subprocess.PIPE,
+      stderr=subprocess.STDOUT,
+      universal_newlines=True,
+    )
+
+    while p.poll() is None:
+      line = p.stdout.readline().strip()
+      update = {
+        'id': str(uuid.uuid4()),
+        'body': line,
+      }
+      ProgressSocketHandler.update_cache(update)
+      ProgressSocketHandler.send_updates(update)
+      print(line)
+    # Process has terminated. Images can now be displayed.
+
+  def _getMulticropDestination(self, is_obverse):
+    return os.path.join(
+      self.getDirname(is_obverse),
+      "img.tiff"
+    )
+
+  def getSessionDirname(self):
+    return os.path.join(
+      IngotProcessor.STORAGE_DIR,
+      self.session_id
+    )
+
+  def getDirname(self, is_obverse):
+    return os.path.join(
+      self.getSessionDirname(),
+      "obverse" if is_obverse else "reverse",
+    )
+
+  def getObverseDirname(self):
+    return self.getDirname(is_obverse=True)
+
+  def getReverseDirname(self):
+    return self.getDirname(is_obverse=False)
+
+  def __bool__(self):
+    return self.is_waiting_for_reverse
