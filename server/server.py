@@ -1,6 +1,6 @@
 import logging
 logger = logging.getLogger("piCoinScanner.server")
-
+from datetime import datetime
 import tornado
 import tornado.escape
 import tornado.ioloop
@@ -107,6 +107,7 @@ class IngotProcessorHandler(tornado.web.RequestHandler):
     print(self.request.files["file"][0].keys())
 
     if not IngotProcessorHandler.images:
+      print("Obverse image received!")
       IngotProcessorHandler.images = IngotProcessor(
         obverse_img=self.request.files["file"][0]
       )
@@ -116,6 +117,7 @@ class IngotProcessorHandler(tornado.web.RequestHandler):
       splitter.start()
 
     else:
+      print("Reverse image received!")
       IngotProcessorHandler.images.addReverse(self.request.files["file"][0])
       merger = threading.Thread(
         target=IngotProcessor.images.merge
@@ -134,11 +136,11 @@ class IngotProcessor:
     self.is_waiting_for_reverse = True
 
     # Make session directories for output scans.
-    logger.debug("Creating session directories")
-    logger.debug(self.getObverseDirname())
-    os.makedirs(path=self.getObverseDirname())
-    logger.debug(self.getReverseDirname())
-    os.makedirs(path=self.getReverseDirname())
+    print("Creating session directories")
+    print(self.getObverseDirname())
+    os.makedirs(self.getObverseDirname())
+    print(self.getReverseDirname())
+    os.makedirs(self.getReverseDirname())
 
     # Write file to disk.
     self.obverse_path = self._write(img=obverse_img, is_obverse=True)
@@ -146,10 +148,10 @@ class IngotProcessor:
   def _write(self, img, is_obverse):
     filename = "{0}.tiff".format("obverse" if is_obverse else "reverse")
     path = os.path.join(self.getSessionDirname(), filename)
-    logger.debug("Writing file to {0}".format(path))
+    print("Writing file to {0}".format(path))
     with open(path, 'w') as f:
       f.write(img['body'])
-    logger.debug("Finished writing file")
+    print("Finished writing file")
     return path
 
   def addReverse(self, reverse_img):
@@ -159,16 +161,16 @@ class IngotProcessor:
 
   def splitObverse(self):
     """This is called by the server to split the obverse image."""
-    logger.debug("Splitting obverse image")
+    print("Splitting obverse image")
     self._split(img=self.obverse_path, is_obverse=True)
 
   def merge(self):
-    logger.debug("Splitting reverse image")
+    print("Splitting reverse image")
     self._split(img=self.reverse_path, is_obverse=False)
     self._merge()
 
   def _merge(self):
-    logger.debug("Merging split images")
+    print("Merging split images")
 
   def _split(self, img, is_obverse):
     # multicrop -c West -u 3 -f 15 "$f" "${TMP_DIR}/${img_filename}"
