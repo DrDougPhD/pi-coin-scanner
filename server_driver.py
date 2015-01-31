@@ -1,23 +1,26 @@
 import logging
 
 logging.basicConfig(
-  level=logging.INFO,
+  level=logging.DEBUG,
   filename='/tmp/server.log',
   filemode='w'
 )
+logging.addHandler(logging.StreamHandler())
 logger = logging.getLogger("piCoinScanner.server.driver")
 
 
 import tornado.ioloop
 import tornado.web
-from server import FileUploadHandler
+from server import RawScanHandler
 from server import MainHandler
 from server import StatusSocketHandler
+from server import IngotProcessorHandler
 
 
 application = tornado.web.Application([
   (r"/",          MainHandler),
-  (r"/rawscan",   FileUploadHandler),
+  (r"/rawscan",   RawScanHandler),
+  (r"/ingotscan", IngotProcessorHandler
   (r"/socket",    StatusSocketHandler),
 ], debug=True)
 

@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger("piCoinScanner.server")
+
 import tornado
 import tornado.escape
 import tornado.ioloop
@@ -79,7 +82,7 @@ class StatusSocketHandler(tornado.websocket.WebSocketHandler):
         StatusSocketHandler.send_updates(chat)
 
 
-class FileUploadHandler(tornado.web.RequestHandler):
+class RawScanHandler(tornado.web.RequestHandler):
   def post(self):
     print(self.request.files)
     
@@ -91,4 +94,6 @@ class FileUploadHandler(tornado.web.RequestHandler):
     #   Export merged files to permanent files.
     #   (TODO) Wait for approval of files to re-attempt splitting and merging.
 
-
+class IngotProcessorHandler(tornado.web.RequestHandler):
+  def post(self):
+    print(self.request.files)
