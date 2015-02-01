@@ -11,6 +11,9 @@ import os.path
 import uuid
 import threading
 import subprocess
+import shutil
+from splitter import MultiCrop
+from merger import ImageMerger
 from tornado.options import define
 from tornado.options import options
  
@@ -130,16 +133,17 @@ class IngotProcessorHandler(tornado.web.RequestHandler):
 class IngotProcessor:
   STORAGE_DIR = os.path.join(RAW_FILE_STORAGE, "Bars")
   DATETIME_FMT = "%Y-%m-%d %Hh %Mm %Ss"
+  SPLIT_EXT = ".tiff"
+  MERGE_EXT = ".jpg"
    
   def __init__(self, obverse_img):
     self.session_id = datetime.now().strftime(IngotProcessor.DATETIME_FMT)
 
     # Make session directories for output scans.
-    print("Creating session directories")
-    print(self.getObverseDirname())
-    os.makedirs(self.getObverseDirname())
-    print(self.getReverseDirname())
-    os.makedirs(self.getReverseDirname())
+    print("Session directory at {0}".format(self.getSessionDirname()))
+    os.makedirs(self.getSessionDirname())
+    self.splitter = MultiCrop(self.getSessionDirname())
+    self.merger   = ImageMerger(self.getSessionDirname())
 
     # Write file to disk.
     self.obverse_path = self._write(img=obverse_img, is_obverse=True)
@@ -151,40 +155,10 @@ class IngotProcessor:
   def splitObverse(self):
     """This is called by the server to split the obverse image."""
     print("Splitting obverse image")
-    self._split(img=self.obverse_path, is_obverse=True)
-
-  def merge(self):
-    print("Splitting reverse image")
-    self._split(img=self.reverse_path, is_obverse=False)
-    self._merge()
-
-  def _merge(self):
-    print("Merging split images")
-
-  def _split(self, img, is_obverse):
-    # multicrop -c West -u 3 -f 15 "$f" "${TMP_DIR}/${img_filename}"
-    p = subprocess.Popen([
-        "bash", "multicrop",
-        '-c', 'West',
-        '-u', '3',
-        '-f', '15',
-        img, self._getMulticropDestination(is_obverse)
-      ],
-      stdout=subprocess.PIPE,
-      stderr=subprocess.STDOUT,
-      universal_newlines=True,
+    self.splitter(
+      img=self.obverse_path,
+      is_obverse=True,
     )
-
-    while p.poll() is None:
-      line = p.stdout.readline().strip()
-      update = {
-        'id': str(uuid.uuid4()),
-        'body': line,
-      }
-      StatusSocketHandler.update_cache(update)
-      StatusSocketHandler.send_updates(update)
-      print(line)
-    # Process has terminated. Images can now be displayed.
 
   def _write(self, img, is_obverse):
     filename = "{0}.tiff".format("obverse" if is_obverse else "reverse")
@@ -195,11 +169,19 @@ class IngotProcessor:
     print("Finished writing file")
     return path
 
-  def _getMulticropDestination(self, is_obverse):
-    return os.path.join(
-      self.getDirname(is_obverse),
-      "img.tiff"
+  def merge(self):
+    print("Splitting reverse image")
+    self.splitter(
+      img=self.reverse_path,
+      is_obverse=False,
     )
+    print("Merging split images")
+    for o, r in self.splitter:
+      result = self.merger(
+        obverse=o,
+        reverse=r,
+      )
+      print("{0} and {1} merged to {2}".format(o, r, result))
 
   def getSessionDirname(self):
     return os.path.join(
@@ -207,14 +189,3 @@ class IngotProcessor:
       self.session_id
     )
 
-  def getDirname(self, is_obverse):
-    return os.path.join(
-      self.getSessionDirname(),
-      "obverse" if is_obverse else "reverse",
-    )
-
-  def getObverseDirname(self):
-    return self.getDirname(is_obverse=True)
-
-  def getReverseDirname(self):
-    return self.getDirname(is_obverse=False)
