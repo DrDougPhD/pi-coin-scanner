@@ -99,7 +99,7 @@ class RawScanHandler(tornado.web.RequestHandler):
 class IngotProcessorHandler(tornado.web.RequestHandler):
   images = None
 
-  def post(self):
+  def put(self):
     print("#"*80)
     if IngotProcessorHandler.images is None:
       print("Obverse image received!")

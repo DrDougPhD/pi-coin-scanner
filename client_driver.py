@@ -71,7 +71,7 @@ def upload_image_to_url(addr, port, upload_url, file_url):
     addr, port, upload_url
   ))
   conn = httplib.HTTPConnection(addr, port)
-  conn.request("PUT", "/ingotscan", open(img_uri, "rb"))
+  conn.request("PUT", "/ingotscan", open(file_url, "rb"))
   response = conn.getresponse()
   print(response)
   conn.close()
