@@ -94,7 +94,7 @@ GPIO.setup(TOGGLE_PIN, GPIO.IN)
 SAMPLE_FILE="/home/pi/2014-12-28_0.tiff"
 SERVER_ADDR="power"
 SERVER_PORT=8912
-SERVER_PATH="/rawscan"
+SERVER_PATH="/ingotscan"
 
 if __name__ == "__main__":
   os.setgid(1000)
