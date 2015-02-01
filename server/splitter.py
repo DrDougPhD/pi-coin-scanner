@@ -74,4 +74,5 @@ class MultiCrop:
     print("Files found: {0}".format(images))
 
   def __iter__(self):
-    pass
+    for pair in zip(self.images["obverse"], self.images["reverse"]):
+      yield pair
