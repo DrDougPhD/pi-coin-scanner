@@ -33,10 +33,6 @@ class MultiCrop:
 
     while p.poll() is None:
       line = p.stdout.readline().strip()
-      update = {
-        'id': str(uuid.uuid4()),
-        'body': line,
-      }
       print(line)
     print("="*80)
     # Process has terminated. Images can now be displayed.
