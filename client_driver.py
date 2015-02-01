@@ -62,17 +62,34 @@ import RPi.GPIO as GPIO
 from pi import BinaryState
 import time
 import httplib
+import subprocess
+
+
+# Set labeled pin 18 to input. This is physical pin 12.
+GPIO.setmode(GPIO.BCM)
+BUTTON_PIN = 18
+GPIO.setup(BUTTON_PIN, GPIO.IN)
+
+TOGGLE_PIN = 17
+GPIO.setup(TOGGLE_PIN, GPIO.IN)
+
+SERVER_ADDR="power"
+SERVER_PORT=8912
+SERVER_PATH="/ingotscan"
+EXT = ".tiff"
+SCANNER_ADDR="hpaio:/usb/Deskjet_F4100_series?serial=CN7CM6G1Q104TJ"
+
 
 def scan():
   print("Scanning image")
-  with open(uri, 'w') as f:
-  p = subprocess.call([
+  p = subprocess.Popen([
       "scanimage",
-      "--device-name",
-        "hpaio:/usb/Deskjet_F4100_series?serial=CN7CM6G1Q104TJ",
+      "--device-name", SCANNER_ADDR,
       "--resolution", "300",
       "--format", EXT,
   ], stdout=subprocess.PIPE)
+  while p.poll() is None:
+    pass
   print("Done scanning")
   return p.stdout
 
@@ -90,21 +107,7 @@ def upload_image_to_url(addr, port, upload_url, img):
   conn.close()
 
 
-# Set labeled pin 18 to input. This is physical pin 12.
-GPIO.setmode(GPIO.BCM)
-BUTTON_PIN = 18
-GPIO.setup(BUTTON_PIN, GPIO.IN)
-
-TOGGLE_PIN = 17
-GPIO.setup(TOGGLE_PIN, GPIO.IN)
-
-SERVER_ADDR="power"
-SERVER_PORT=8912
-SERVER_PATH="/ingotscan"
-
 if __name__ == "__main__":
-  os.setgid(1000)
-  os.setuid(1000)
   state = BinaryState()
   toggle = BinaryState(GPIO.input(TOGGLE_PIN))
 
