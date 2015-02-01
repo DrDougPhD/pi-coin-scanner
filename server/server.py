@@ -86,9 +86,9 @@ RAW_FILE_STORAGE = "/home/kp/Warez/Scans"
 class RawScanHandler(tornado.web.RequestHandler):
   def put(self):
     print("SHOULD NOT BE POSTING HERE")
-    print(self.request.files.keys())
-    print(dir(self.request.files))
-    print(type(self.request.files))
+    print(dir(self.request))
+    print(type(self.request))
+    print("Size of self.request.body: {0} chars".format(len(self.request.body)))
     
     # Split the image files.
     # Store the split images in temporary files.
