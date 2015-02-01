@@ -71,9 +71,15 @@ def upload_image_to_url(addr, port, upload_url, file_url):
     addr, port, upload_url
   ))
   conn = httplib.HTTPConnection(addr, port)
-  conn.request("PUT", "/ingotscan", open(file_url, "rb"))
+  conn.request("PUT", upload_url, open(file_url, "rb"))
   response = conn.getresponse()
   print(response)
+  print(dir(response))
+  print("Response body: {0}".format(response.read()))
+  print("Response header: {0}".format(response.getheaders()))
+  print("Response msg: {0}".format(response.msg))
+  print("Response status: {0}".format(response.status))
+  print("Response reason: {0}".format(response.reason))
   conn.close()
 
 
@@ -88,7 +94,7 @@ GPIO.setup(TOGGLE_PIN, GPIO.IN)
 SAMPLE_FILE="/home/pi/2014-12-28_0.tiff"
 SERVER_ADDR="power"
 SERVER_PORT=8912
-
+SERVER_PATH="/rawscan"
 
 if __name__ == "__main__":
   os.setgid(1000)
@@ -109,7 +115,7 @@ if __name__ == "__main__":
         start = time.time()
         #r = requests.post(url, files=scanned_image)
         upload_image_to_url(
-          addr=SERVER_ADDR, port=SERVER_PORT, upload_url="ingotscan",
+          addr=SERVER_ADDR, port=SERVER_PORT, upload_url=SERVER_PATH,
           file_url=SAMPLE_FILE,
         )
         duration = time.time() - start
