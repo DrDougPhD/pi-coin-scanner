@@ -60,8 +60,22 @@
 import os
 import RPi.GPIO as GPIO
 from pi import BinaryState
-import requests
 import time
+import httplib
+
+def upload_image_to_url(addr, port, upload_url, file_url):
+  if upload_url[0] != "/":
+    upload_url = "/"+upload_url
+
+  print("Opening HTTP connection with http://{0}:{1}{2}".format(
+    addr, port, upload_url
+  ))
+  conn = httplib.HTTPConnection(addr, port)
+  conn.request("PUT", "/ingotscan", open(img_uri, "rb"))
+  response = conn.getresponse()
+  print(response)
+  conn.close()
+
 
 # Set labeled pin 18 to input. This is physical pin 12.
 GPIO.setmode(GPIO.BCM)
@@ -72,6 +86,8 @@ TOGGLE_PIN = 17
 GPIO.setup(TOGGLE_PIN, GPIO.IN)
 
 SAMPLE_FILE="/home/pi/2014-12-28_0.tiff"
+SERVER_ADDR="power"
+SERVER_PORT=8912
 
 
 if __name__ == "__main__":
@@ -89,15 +105,13 @@ if __name__ == "__main__":
       if bool(toggle):
         # Silver ingot scanning is underway.
         print("Scanning ingot")
-        url = 'http://power:8912/ingotscan'
-
-        with open(SAMPLE_FILE) as f:
-          scanned_image = {
-            'file': ('scan.tiff', f.read())
-          }
 
         start = time.time()
-        r = requests.post(url, files=scanned_image)
+        #r = requests.post(url, files=scanned_image)
+        upload_image_to_url(
+          addr=SERVER_ADDR, port=SERVER_PORT, upload_url="ingotscan",
+          file_url=SAMPLE_FILE,
+        )
         duration = time.time() - start
         print("Uploading took {0} seconds".format(duration))
 

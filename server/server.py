@@ -141,15 +141,6 @@ class IngotProcessor:
     # Write file to disk.
     self.obverse_path = self._write(img=obverse_img, is_obverse=True)
 
-  def _write(self, img, is_obverse):
-    filename = "{0}.tiff".format("obverse" if is_obverse else "reverse")
-    path = os.path.join(self.getSessionDirname(), filename)
-    print("Writing file to {0}".format(path))
-    with open(path, 'w') as f:
-      f.write(img['body'])
-    print("Finished writing file")
-    return path
-
   def addReverse(self, reverse_img):
     # Write file to disk.
     self.reverse_path = self._write(img=reverse_img, is_obverse=False)
@@ -191,6 +182,15 @@ class IngotProcessor:
       ProgressSocketHandler.send_updates(update)
       print(line)
     # Process has terminated. Images can now be displayed.
+
+  def _write(self, img, is_obverse):
+    filename = "{0}.tiff".format("obverse" if is_obverse else "reverse")
+    path = os.path.join(self.getSessionDirname(), filename)
+    print("Writing file to {0}".format(path))
+    with open(path, 'w') as f:
+      f.write(img['body'])
+    print("Finished writing file")
+    return path
 
   def _getMulticropDestination(self, is_obverse):
     return os.path.join(
