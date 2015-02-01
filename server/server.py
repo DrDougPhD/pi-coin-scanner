@@ -11,6 +11,7 @@ import os.path
 import uuid
 import threading
 import subprocess
+import shutil
 from tornado.options import define
 from tornado.options import options
  
@@ -130,16 +131,15 @@ class IngotProcessorHandler(tornado.web.RequestHandler):
 class IngotProcessor:
   STORAGE_DIR = os.path.join(RAW_FILE_STORAGE, "Bars")
   DATETIME_FMT = "%Y-%m-%d %Hh %Mm %Ss"
+  SPLIT_EXT = ".tiff"
+  MERGE_EXT = ".jpg"
    
   def __init__(self, obverse_img):
     self.session_id = datetime.now().strftime(IngotProcessor.DATETIME_FMT)
 
     # Make session directories for output scans.
-    print("Creating session directories")
-    print(self.getObverseDirname())
-    os.makedirs(self.getObverseDirname())
-    print(self.getReverseDirname())
-    os.makedirs(self.getReverseDirname())
+    print("Session directory at {0}".format(self.getSessionDirname()))
+    os.makedirs(self.getSessionDirname())
 
     # Write file to disk.
     self.obverse_path = self._write(img=obverse_img, is_obverse=True)
@@ -163,12 +163,15 @@ class IngotProcessor:
 
   def _split(self, img, is_obverse):
     # multicrop -c West -u 3 -f 15 "$f" "${TMP_DIR}/${img_filename}"
+    tmp_dir = self._getTempDirectory()
+    output_destination = self._getMulticropDestination(tmp_dir, is_obverse)
+    print("Images will be output to {0}".format(output_destination))
     p = subprocess.Popen([
-        "bash", "multicrop",
+        "./multicrop",
         '-c', 'West',
         '-u', '3',
         '-f', '15',
-        img, self._getMulticropDestination(is_obverse)
+        img, output_destination
       ],
       stdout=subprocess.PIPE,
       stderr=subprocess.STDOUT,
@@ -184,7 +187,9 @@ class IngotProcessor:
       StatusSocketHandler.update_cache(update)
       StatusSocketHandler.send_updates(update)
       print(line)
+    print("="*80)
     # Process has terminated. Images can now be displayed.
+    shutil.move(tmp_dir, self.getDirname(is_obverse))
 
   def _write(self, img, is_obverse):
     filename = "{0}.tiff".format("obverse" if is_obverse else "reverse")
@@ -195,11 +200,16 @@ class IngotProcessor:
     print("Finished writing file")
     return path
 
-  def _getMulticropDestination(self, is_obverse):
-    return os.path.join(
-      self.getDirname(is_obverse),
-      "img.tiff"
-    )
+  def _getMulticropDestination(self, tmp_dir, is_obverse):
+    return os.path.join(tmp_dir, "{0}{1}".format(
+      "o" if is_obverse else "r",
+      IngotProcessor.SPLIT_EXT
+    ))
+
+  def _getTempDirectory(self):
+    directory = os.path.join("/tmp", str(uuid.uuid4()))
+    os.makedirs(directory)
+    return directory
 
   def getSessionDirname(self):
     return os.path.join(
