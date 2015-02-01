@@ -84,9 +84,11 @@ class StatusSocketHandler(tornado.websocket.WebSocketHandler):
 RAW_FILE_STORAGE = "/home/kp/Warez/Scans"
 
 class RawScanHandler(tornado.web.RequestHandler):
-  def post(self):
+  def put(self):
     print("SHOULD NOT BE POSTING HERE")
     print(self.request.files.keys())
+    print(dir(self.request.files))
+    print(type(self.request.files))
     
     # Split the image files.
     # Store the split images in temporary files.
