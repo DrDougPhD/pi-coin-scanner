@@ -63,7 +63,21 @@ from pi import BinaryState
 import time
 import httplib
 
-def upload_image_to_url(addr, port, upload_url, file_url):
+def scan():
+  print("Scanning image")
+  with open(uri, 'w') as f:
+  p = subprocess.call([
+      "scanimage",
+      "--device-name",
+        "hpaio:/usb/Deskjet_F4100_series?serial=CN7CM6G1Q104TJ",
+      "--resolution", "300",
+      "--format", EXT,
+  ], stdout=subprocess.PIPE)
+  print("Done scanning")
+  return p.stdout
+
+
+def upload_image_to_url(addr, port, upload_url, img):
   if upload_url[0] != "/":
     upload_url = "/"+upload_url
 
@@ -71,7 +85,7 @@ def upload_image_to_url(addr, port, upload_url, file_url):
     addr, port, upload_url
   ))
   conn = httplib.HTTPConnection(addr, port)
-  conn.request("PUT", upload_url, open(file_url, "rb"))
+  conn.request("PUT", upload_url, img)
   response = conn.getresponse()
   conn.close()
 
@@ -103,12 +117,16 @@ if __name__ == "__main__":
       if bool(toggle):
         # Silver ingot scanning is underway.
         print("Scanning ingot")
+        start = time.time()
+        raw_img_binary = scan()
+        duration = time.time() - start
+        print("Scanning took {0} seconds".format(duration))
 
         start = time.time()
         #r = requests.post(url, files=scanned_image)
         upload_image_to_url(
           addr=SERVER_ADDR, port=SERVER_PORT, upload_url=SERVER_PATH,
-          file_url=SAMPLE_FILE,
+          img=raw_img_binary,
         )
         duration = time.time() - start
         print("Uploading took {0} seconds".format(duration))
