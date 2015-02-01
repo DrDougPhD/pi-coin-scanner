@@ -73,13 +73,6 @@ def upload_image_to_url(addr, port, upload_url, file_url):
   conn = httplib.HTTPConnection(addr, port)
   conn.request("PUT", upload_url, open(file_url, "rb"))
   response = conn.getresponse()
-  print(response)
-  print(dir(response))
-  print("Response body: {0}".format(response.read()))
-  print("Response header: {0}".format(response.getheaders()))
-  print("Response msg: {0}".format(response.msg))
-  print("Response status: {0}".format(response.status))
-  print("Response reason: {0}".format(response.reason))
   conn.close()
 
 
@@ -91,7 +84,6 @@ GPIO.setup(BUTTON_PIN, GPIO.IN)
 TOGGLE_PIN = 17
 GPIO.setup(TOGGLE_PIN, GPIO.IN)
 
-SAMPLE_FILE="/home/pi/2014-12-28_0.tiff"
 SERVER_ADDR="power"
 SERVER_PORT=8912
 SERVER_PATH="/ingotscan"
