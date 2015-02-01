@@ -9,7 +9,8 @@ import tornado.web
 import tornado.websocket
 import os.path
 import uuid
-
+import threading
+import subprocess
 from tornado.options import define
 from tornado.options import options
  
@@ -107,19 +108,19 @@ class IngotProcessorHandler(tornado.web.RequestHandler):
       print("Obverse image received!")
       print("-----------------------")
       IngotProcessorHandler.images = IngotProcessor(
-        obverse_img=self.request.files["file"][0]
+        obverse_img=self.request
       )
       splitter = threading.Thread(
-        target=IngotProcessor.images.splitObverse
+        target=IngotProcessorHandler.images.splitObverse
       )
       splitter.start()
 
     else:
       print("Reverse image received!")
       print("-----------------------")
-      IngotProcessorHandler.images.addReverse(self.request.files["file"][0])
+      IngotProcessorHandler.images.addReverse(self.request)
       merger = threading.Thread(
-        target=IngotProcessor.images.merge
+        target=IngotProcessorHandler.images.merge
       )
       merger.start()
 
@@ -180,8 +181,8 @@ class IngotProcessor:
         'id': str(uuid.uuid4()),
         'body': line,
       }
-      ProgressSocketHandler.update_cache(update)
-      ProgressSocketHandler.send_updates(update)
+      StatusSocketHandler.update_cache(update)
+      StatusSocketHandler.send_updates(update)
       print(line)
     # Process has terminated. Images can now be displayed.
 
@@ -190,7 +191,7 @@ class IngotProcessor:
     path = os.path.join(self.getSessionDirname(), filename)
     print("Writing file to {0}".format(path))
     with open(path, 'w') as f:
-      f.write(img['body'])
+      f.write(img.body)
     print("Finished writing file")
     return path
 
