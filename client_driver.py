@@ -62,6 +62,7 @@ import RPi.GPIO as GPIO
 from pi import BinaryState
 import time
 import httplib
+import uuid
 import subprocess
 
 
@@ -76,25 +77,22 @@ GPIO.setup(TOGGLE_PIN, GPIO.IN)
 SERVER_ADDR="power"
 SERVER_PORT=8912
 SERVER_PATH="/ingotscan"
-EXT = ".tiff"
+EXT = "tiff"
 SCANNER_ADDR="hpaio:/usb/Deskjet_F4100_series?serial=CN7CM6G1Q104TJ"
-
+TMP_DIR="/tmp/ram"
 
 def scan():
-  print("Scanning image")
-  p = subprocess.Popen([
+  url = os.path.join(TMP_DIR, "{0}.{1}".format(uuid.uuid4(), EXT))
+  with open(url, 'wb') as f:
+    subprocess.call([
       "scanimage",
       "--device-name", SCANNER_ADDR,
       "--resolution", "300",
       "--format", EXT,
-  ], stdout=subprocess.PIPE)
-  while p.poll() is None:
-    pass
-  print("Done scanning")
-  return p.stdout
+    ], stdout=f)
+  return url
 
-
-def upload_image_to_url(addr, port, upload_url, img):
+def upload_image_to_url(addr, port, upload_url, img_url):
   if upload_url[0] != "/":
     upload_url = "/"+upload_url
 
@@ -102,7 +100,7 @@ def upload_image_to_url(addr, port, upload_url, img):
     addr, port, upload_url
   ))
   conn = httplib.HTTPConnection(addr, port)
-  conn.request("PUT", upload_url, img)
+  conn.request("PUT", upload_url, open(img_url, 'rb'))
   response = conn.getresponse()
   conn.close()
 
@@ -121,7 +119,7 @@ if __name__ == "__main__":
         # Silver ingot scanning is underway.
         print("Scanning ingot")
         start = time.time()
-        raw_img_binary = scan()
+        img_url = scan()
         duration = time.time() - start
         print("Scanning took {0} seconds".format(duration))
 
@@ -129,8 +127,9 @@ if __name__ == "__main__":
         #r = requests.post(url, files=scanned_image)
         upload_image_to_url(
           addr=SERVER_ADDR, port=SERVER_PORT, upload_url=SERVER_PATH,
-          img=raw_img_binary,
+          img_url=img_url,
         )
+        os.remove(img_url)
         duration = time.time() - start
         print("Uploading took {0} seconds".format(duration))
 
