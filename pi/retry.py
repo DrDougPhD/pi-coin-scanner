@@ -5,8 +5,6 @@ if len(sys.argv) < 3:
   sys.exit(1)
 
 import os
-import RPi.GPIO as GPIO
-from pi import BinaryState
 import time
 import httplib
 import uuid
@@ -40,13 +38,14 @@ if __name__ == "__main__":
   reverse_img = sys.argv[2]
   print("Reverse image: {0}".format(reverse_img))
 
-  """
-  start = time.time()
-  #r = requests.post(url, files=scanned_image)
   upload_image_to_url(
     addr=SERVER_ADDR, port=SERVER_PORT, upload_url=SERVER_PATH,
     img_url=obverse_img,
   )
-  duration = time.time() - start
-  print("Uploading took {0} seconds".format(duration))
-  """
+  print("Obverse image uploaded, sleeping for 10 seconds")
+  raw_input("Press Enter to continue...")
+  upload_image_to_url(
+    addr=SERVER_ADDR, port=SERVER_PORT, upload_url=SERVER_PATH,
+    img_url=reverse_img,
+  )
+  print("Reverse image uploaded.")
