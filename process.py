@@ -69,9 +69,9 @@ def create_mask(img):
 
 if __name__ == "__main__":
   url = sys.argv[1]
-  img = Image.open(url)
-  print(img.format, img.size, img.mode)
-  shrinked_img = shrink(img, 32)
+  image = Image.open(url)
+  print(image.format, image.size, image.mode)
+  shrinked_img = shrink(image, 32)
   mask = create_mask(shrinked_img)
 
   print("Size of mask: {0}".format(mask.size))
@@ -79,36 +79,71 @@ if __name__ == "__main__":
   def get_mininum_row_with_white(img):
     w, h = img.size
     start_y = h//20
-    pixels = []
+    #pixels = []
     for y in range(start_y, h):
       for x in range(w):
-        p = mask.getpixel((x, y))
+        p = img.getpixel((x, y))
         if p == 255:
           #print("="*80)
           return y
-        pixels.append(p)
+        #pixels.append(p)
       #print(pixels)
-      pixels = []
+      #pixels = []
 
   def get_maximum_row_with_white(img):
     w, h = img.size
-    pixels = []
+    #pixels = []
     # Start from the bottom of the image and work down.
     for y in range(h-1, 0, -1):
       for x in range(w):
-        p = mask.getpixel((x, y))
+        p = img.getpixel((x, y))
         if p == 255:
           #print("="*80)
           return y
-        pixels.append(p)
+        #pixels.append(p)
       #print(pixels)
-      pixels = []
+      #pixels = []
+
+  def get_mininum_column_with_white(img):
+    w, h = img.size
+    #pixels = []
+    for x in range(w):
+      for y in range(h):
+        p = img.getpixel((x, y))
+        if p == 255:
+          #print("="*80)
+          return x
+        #pixels.append(p)
+      #print(pixels)
+      #pixels = []
+
+  def get_maximum_column_with_white(img):
+    w, h = img.size
+    #pixels = []
+    # Start from the bottom of the image and work down.
+    for x in range(w-1, 0, -1):
+      for y in range(h):
+        p = img.getpixel((x, y))
+        if p == 255:
+          #print("="*80)
+          return x
+        #pixels.append(p)
+      #print(pixels)
+      #pixels = []
 
   min_y = get_mininum_row_with_white(mask)
   print("Row {0} is the first row with a white pixel".format(min_y))
   max_y = get_maximum_row_with_white(mask)
   print("Row {0} is the last row with a white pixel".format(max_y))
-  max_x = mask.size[0]
-  reduced_rows_mask = mask.crop((0, min_y, max_x, max_y))
-  print("Size of cropped image: {0}".format(reduced_rows_mask.size))
-  reduced_rows_mask.resize([p//8 for p in img.size]).show()
+  w = mask.size[0]
+  reduced_rows_mask = mask.crop((0, min_y, w, max_y))
+  print("Size of reduced-row mask: {0}".format(reduced_rows_mask.size))
+  #reduced_rows_mask.show()#.resize([p//8 for p in img.size]).show()
+
+  min_x = get_mininum_column_with_white(reduced_rows_mask)
+  print("Column {0} is the first column with a white pixel".format(min_x))
+  max_x = get_maximum_column_with_white(reduced_rows_mask)
+  print("Column {0} is the last column with a white pixel".format(max_x))
+  h = reduced_rows_mask.size[1]
+  cropped_mask = reduced_rows_mask.crop((min_x, 0, max_x, h))
+  cropped_mask.resize([p//8 for p in image.size]).show()
