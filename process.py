@@ -73,5 +73,29 @@ if __name__ == "__main__":
   print(img.format, img.size, img.mode)
   shrinked_img = shrink(img, 32)
   mask = create_mask(shrinked_img)
-  expanded_mask = mask.resize(img.size)
-  expanded_mask.show()
+
+  print("Size of mask: {0}".format(mask.size))
+  
+  def get_mininum_row_with_white(img):
+    w, h = img.size
+    start_y = h//20
+    for y in range(start_y, h):
+      for x in range(w):
+        p = mask.getpixel((x, y))
+        if p == 0:
+          return y
+
+  def get_maximum_row_with_white(img):
+    w, h = img.size
+    # Start from the bottom of the image and work down.
+    for y in range(h-1, 0, -1):
+      for x in range(w):
+        p = mask.getpixel((x, y))
+        if p == 0:
+          return y
+
+  min_y = get_mininum_row_with_white(mask)
+  print("Row {0} is the first row with a white pixel".format(min_y))
+  max_y = get_maximum_row_with_white(mask)
+  print("Row {0} is the last row with a white pixel".format(max_y))
+  mask.show()
