@@ -79,23 +79,36 @@ if __name__ == "__main__":
   def get_mininum_row_with_white(img):
     w, h = img.size
     start_y = h//20
+    pixels = []
     for y in range(start_y, h):
       for x in range(w):
         p = mask.getpixel((x, y))
-        if p == 0:
+        if p == 255:
+          #print("="*80)
           return y
+        pixels.append(p)
+      #print(pixels)
+      pixels = []
 
   def get_maximum_row_with_white(img):
     w, h = img.size
+    pixels = []
     # Start from the bottom of the image and work down.
     for y in range(h-1, 0, -1):
       for x in range(w):
         p = mask.getpixel((x, y))
-        if p == 0:
+        if p == 255:
+          #print("="*80)
           return y
+        pixels.append(p)
+      #print(pixels)
+      pixels = []
 
   min_y = get_mininum_row_with_white(mask)
   print("Row {0} is the first row with a white pixel".format(min_y))
   max_y = get_maximum_row_with_white(mask)
   print("Row {0} is the last row with a white pixel".format(max_y))
-  mask.show()
+  max_x = mask.size[0]
+  reduced_rows_mask = mask.crop((0, min_y, max_x, max_y))
+  print("Size of cropped image: {0}".format(reduced_rows_mask.size))
+  reduced_rows_mask.resize([p//8 for p in img.size]).show()
