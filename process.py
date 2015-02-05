@@ -2,17 +2,13 @@ import sys
 from PIL import Image
 from itertools import zip_longest
 
-url = sys.argv[1]
-img = Image.open(url)
-print(img.format, img.size, img.mode)
+def shrink(img, scale):
+  w, h = img.size
+  scaled_w = w//scale
+  scaled_h = h//scale
+  scaled_img = img.resize((scaled_w, scaled_h))
+  return scaled_img
 
-
-lumoscity = img.convert("L")
-histogram = lumoscity.histogram()
-
-print("+"*80)
-with open("{0}.csv".format(url), 'w') as f:
-  f.write("\n".join([str(h) for h in histogram]))
 
 def peak1d(A, start, end):
   midpoint = (start+end)//2
@@ -37,27 +33,45 @@ def peak1d(A, start, end):
   return peak1d(A, midpoint+1, end)
 
 
-###############################################################################
-# The histogram of the scanned image has two "peaks". One slow slope in the
-#   first half and one sharp slope in the second half.
-#   Let's find the peak of the first half.
-n = len(histogram)
-m = n//2
-slow_peak_location = peak1d(histogram, 0, m)
-slow_peak = histogram[slow_peak_location]
-print("Slow peak found at {0} with color value {1}".format(
-  slow_peak_location, slow_peak
-))
+
+def create_mask(img):
+  lumoscity = img.convert("L")
+  histogram = lumoscity.histogram()
+
+  print("+"*80)
+  with open("{0}.csv".format(url), 'w') as f:
+    f.write("\n".join([str(h) for h in histogram]))
+
+############################################################
+# The histogram of the scanned image has two "peaks". One 
+#   slow slope in the first half and one sharp slope in the
+#   second half. Let's find the peak of the first half.
+  n = len(histogram)
+  m = n//2
+  slow_peak_location = peak1d(histogram, 0, m)
+  slow_peak = histogram[slow_peak_location]
+  print("Slow peak found at {0} with color value {1}".format(
+    slow_peak_location, slow_peak
+  ))
 
 ###########################################################
 # Now find the first location in the second half that has
 #  this peak value. This will be the threshold value.
-threshold = 0
-for i in range(m+1, n):
-  if histogram[i] >= slow_peak:
-    threshold = i
-    break
+  threshold = 0
+  for i in range(m+1, n):
+    if histogram[i] >= slow_peak:
+      threshold = i
+      break
 
-print("Color removal will occur for pixels less than {0}".format(threshold))
-mask = lumoscity.point(lambda p: p < threshold and 255)
-mask.show()
+  print("Color removal will occur for pixels less than {0}".format(threshold))
+  mask = lumoscity.point(lambda p: p < threshold and 255)
+  return mask
+
+if __name__ == "__main__":
+  url = sys.argv[1]
+  img = Image.open(url)
+  print(img.format, img.size, img.mode)
+  shrinked_img = shrink(img, 32)
+  mask = create_mask(shrinked_img)
+  expanded_mask = mask.resize(img.size)
+  expanded_mask.show()
