@@ -5,19 +5,10 @@ from itertools import zip_longest
 url = sys.argv[1]
 img = Image.open(url)
 print(img.format, img.size, img.mode)
+
+
 lumoscity = img.convert("L")
-concatenated_histogram = img.histogram()
-
-def grouper(iterable, n, fillvalue=None):
-  "Collect data into fixed-length chunks or blocks"
-  # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx
-  args = [iter(iterable)] * n
-  return zip_longest(fillvalue=fillvalue, *args)
-
-num_colors_per_band = len(concatenated_histogram)//3
-R, G, B = grouper(concatenated_histogram, num_colors_per_band)
-histogram = [r+g+b for r, g, b in zip(R, G, B)]
-#histogram = concatenated_histogram
+histogram = lumoscity.histogram()
 
 print("+"*80)
 with open("{0}.csv".format(url), 'w') as f:
@@ -68,5 +59,5 @@ for i in range(m+1, n):
     break
 
 print("Color removal will occur for pixels less than {0}".format(threshold))
-masked = img.point(lambda p: p < threshold and 255)
-masked.show()
+mask = lumoscity.point(lambda p: p < threshold and 255)
+mask.show()
