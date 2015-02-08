@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 import sys
 from matplotlib import pyplot as plt
+import random
+r = lambda: random.randint(0,255)
 
 """
 # global thresholding
@@ -41,35 +43,40 @@ def to_monochrome(img):
 if __name__ == "__main__":
   img = cv2.imread(sys.argv[1])
   gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-  plotter = SimplePlot()
-  #plotter(img, "Initial")
+  cv2.imwrite("01_gray.png", gray_img)
 
-  blur = cv2.GaussianBlur(gray_img, (5,5), 0)
-  #plotter(blur, "Gaussian Blur")
+  blur = cv2.GaussianBlur(gray_img, (5, 5), 0)
+  cv2.imwrite("02_blur.png", blur)
 
   _, threshold = cv2.threshold(
     blur, 0, 255,
     cv2.THRESH_BINARY+cv2.THRESH_OTSU
   )
-  #plotter(threshold, "Threshold")
+  cv2.imwrite("03_threshold.png", threshold)
 
   kernel = np.ones((5,5),np.uint8)
   opening = cv2.morphologyEx(threshold, cv2.MORPH_OPEN, kernel)
-  #plotter(opening, "Opening")
+  cv2.imwrite("04_opening.png", opening)
 
   closing = cv2.morphologyEx(opening, cv2.MORPH_CLOSE, kernel)
-  #plotter(closing, "Opening")
+  cv2.imwrite("05_closing.png", closing)
 
   closing_inv = cv2.bitwise_not(closing)
   contours, hierarchy = cv2.findContours(closing_inv, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-  contour_img = img.copy()
-  cv2.drawContours(contour_img, contours, 0, (0,255,0), 3)
-  plotter(contour_img, "Contours")
+  blank_image_contours = np.zeros(img.shape, np.uint8)
+  blank_image = np.zeros(img.shape, np.uint8)
+  next_countour_indices = hierarchy[0,:,0]
+  next_index = 0
+  i = 0
+  while next_index != -1:
+    i += 1
+    c = contours[next_index]
+    cv2.drawContours(blank_image_contours, c, -1, (255, 0, 0), 5)
+    x,y,w,h = cv2.boundingRect(c)
 
-  print(hierarchy)
-  print("There are {0} contours".format(len(contours)))
+    print("Size: {0}  | ".format(w*h), (x,y), (x+w, y+h))
+    cv2.rectangle(blank_image, (x,y), (x+w,y+h), (r(), r(), r()), 10)
+    next_index = next_countour_indices[next_index]
 
-  x,y,w,h = cv2.boundingRect(contours[0])
-  cv2.rectangle(contour_img,(x,y),(x+w,y+h),(0,255,0),2)
-  
-  plt.show()
+  cv2.imwrite("06_contours.png", blank_image_contours)
+  cv2.imwrite("07_bounding_boxes.png", blank_image)
