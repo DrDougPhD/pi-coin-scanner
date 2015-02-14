@@ -15,7 +15,7 @@ ret2,th2 = cv2.threshold(img,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
 """
 
 class SimplePlot:
-  def __init__(self):
+  def __init__(self, shrink_factor=None):
     self.n = 1
 
   def __call__(self, img, name):
@@ -28,11 +28,16 @@ class SimplePlot:
 
 
 class IntermediateImageSaver:
-  def __init__(self, prefix):
+  def __init__(self, prefix, scale=None):
     self.n = 1
     self.prefix = prefix
+    self.scale = scale
 
   def __call__(self, img, name):
+    if self.scale is not None:
+      for i in range(self.scale):
+        img = cv2.pyrUp(img)
+
     cv2.imwrite(
       "output/{0}_{1}_{2}.png".format(self.prefix, self.n, name),
       img
@@ -40,24 +45,39 @@ class IntermediateImageSaver:
     self.n += 1
 
 
+class ImageCropper:
+  def __init__(self, img, original_file):
+    self.filename = os.path.basename(original_file).split(".")[0]
+    self.img = cv2.imread(original_file)
+    self.n = 0
+
+  def __call__(self, min_x, max_x, min_y, max_y):
+    cropped_img = self.img[min_y:max_y, min_x:max_x]
+    cv2.imwrite("cropped/{0}_{1}.png".format(self.n, self.filename), cropped_img)
+    self.n += 1
+
+
 def img2bounding_box(url, border_reduction):
+  scale_exponent = 4
   archiver = IntermediateImageSaver(
     prefix=os.path.basename(url).split(".")[0]
   )
+  cropper = ImageCropper(url)
 
-  img = cv2.imread(url)[
+  img = cv2.imread(url)
+
+  reduced_border_img = img[
     border_reduction:-border_reduction,
     border_reduction:-border_reduction
   ]
-  gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+  for i in range(scale_exponent):
+    reduced_border_img = cv2.pyrDown(reduced_border_img)
+
+  gray_img = cv2.cvtColor(reduced_border_img, cv2.COLOR_BGR2GRAY)
   archiver(gray_img, "gray")
 
-  blur = cv2.GaussianBlur(gray_img, (5, 5), 0)
-  archiver(blur, "blur")
-
-  _, threshold = cv2.threshold(
-    blur, 0, 255,
-    cv2.THRESH_BINARY+cv2.THRESH_OTSU
+  threshold = cv2.adaptiveThreshold(
+    gray_img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
   )
   archiver(threshold, "threshold")
 
@@ -84,8 +104,17 @@ def img2bounding_box(url, border_reduction):
     i += 1
     c = contours[next_index]
     cv2.drawContours(blank_image_contours, c, -1, (255, 0, 0), 5)
-    x,y,w,h = cv2.boundingRect(c)
-    bounding_boxes.append((x,y,w,h))
+    rect = cv2.boundingRect(c)
+    x,y,w,h = rect
+    
+    # scale up these coordinates to their original size
+    min_x = (x*2**scale_exponent) + border_reduction
+    min_y = (y*2**scale_exponent) + border_reduction
+    max_x = min_x + (w*2**scale_exponent)
+    max_y = min_y + (h*2**scale_exponent)
+    cropper(min_x=min_x, max_x=max_x, min_y=min_y, max_y=max_y)
+
+    bounding_boxes.append((min_x, max_x, min_y, max_y))
 
     print("Size: {0}  | ".format(w*h), (x,y), (x+w, y+h), (w, h))
     cv2.rectangle(blank_image, (x,y), (x+w,y+h), (r(), r(), r()), 10)
@@ -109,8 +138,11 @@ if __name__ == "__main__":
   border_reduction = 50
   for url in testing_samples:
     boxes = img2bounding_box(url=url, border_reduction=border_reduction)
-    assert len(boxes) == testing_samples[url], (
-      "For {0}, the expected number of bounding boxes ({1}) did not equal"
-      " the actual number ({1})".format(
-        os.path.basename(url) ,testing_samples[url], len(boxes)
-    ))
+    if len(boxes) != testing_samples[url]:
+      print(
+        "For {0}, the expected number of bounding boxes ({1}) did not equal"
+        " the actual number ({2})".format(
+          os.path.basename(url), testing_samples[url], len(boxes)
+      ))
+
+    
