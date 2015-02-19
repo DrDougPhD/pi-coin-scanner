@@ -6,14 +6,6 @@ from matplotlib import pyplot as plt
 import random
 r = lambda: random.randint(0,255)
 
-"""
-# global thresholding
-ret1,th1 = cv2.threshold(img,127,255,cv2.THRESH_BINARY)
-
-# Otsu's thresholding
-ret2,th2 = cv2.threshold(img,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-"""
-
 class SimplePlot:
   def __init__(self, shrink_factor=None):
     self.n = 1
@@ -39,14 +31,14 @@ class IntermediateImageSaver:
         img = cv2.pyrUp(img)
 
     cv2.imwrite(
-      "output/{0}_{1}_{2}.png".format(self.prefix, self.n, name),
+      "intermediate/{0}_{1}_{2}.png".format(self.prefix, self.n, name),
       img
     )
     self.n += 1
 
 
 class ImageCropper:
-  def __init__(self, img, original_file):
+  def __init__(self, original_file):
     self.filename = os.path.basename(original_file).split(".")[0]
     self.img = cv2.imread(original_file)
     self.n = 0
@@ -58,7 +50,7 @@ class ImageCropper:
 
 
 def img2bounding_box(url, border_reduction):
-  scale_exponent = 4
+  #scale_exponent = 4
   archiver = IntermediateImageSaver(
     prefix=os.path.basename(url).split(".")[0]
   )
@@ -70,8 +62,8 @@ def img2bounding_box(url, border_reduction):
     border_reduction:-border_reduction,
     border_reduction:-border_reduction
   ]
-  for i in range(scale_exponent):
-    reduced_border_img = cv2.pyrDown(reduced_border_img)
+  #for i in range(scale_exponent):
+  #  reduced_border_img = cv2.pyrDown(reduced_border_img)
 
   gray_img = cv2.cvtColor(reduced_border_img, cv2.COLOR_BGR2GRAY)
   archiver(gray_img, "gray")
@@ -108,16 +100,18 @@ def img2bounding_box(url, border_reduction):
     x,y,w,h = rect
     
     # scale up these coordinates to their original size
-    min_x = (x*2**scale_exponent) + border_reduction
-    min_y = (y*2**scale_exponent) + border_reduction
-    max_x = min_x + (w*2**scale_exponent)
-    max_y = min_y + (h*2**scale_exponent)
-    cropper(min_x=min_x, max_x=max_x, min_y=min_y, max_y=max_y)
+    if w*h > 22179:
+      min_x = x + border_reduction
+      min_y = y + border_reduction
+      max_x = min_x + w
+      max_y = min_y + h
+      cropper(min_x=min_x, max_x=max_x, min_y=min_y, max_y=max_y)
 
-    bounding_boxes.append((min_x, max_x, min_y, max_y))
+      bounding_boxes.append((min_x, max_x, min_y, max_y))
 
-    print("Size: {0}  | ".format(w*h), (x,y), (x+w, y+h), (w, h))
-    cv2.rectangle(blank_image, (x,y), (x+w,y+h), (r(), r(), r()), 10)
+      print("Size: {0}  | ".format(w*h), (x,y), (x+w, y+h), (w, h))
+      cv2.rectangle(blank_image, (x,y), (x+w,y+h), (r(), r(), r()), 10)
+
     next_index = next_countour_indices[next_index]
 
   print("Number of detected objects: {0}".format(i))
