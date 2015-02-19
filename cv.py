@@ -49,6 +49,44 @@ class ImageCropper:
     self.n += 1
 
 
+class CroppingBox:
+  def __init__(self, x, y, w, h):
+    self.x = x
+    self.y = y
+    self.w = w
+    self.h = h
+
+  def area(self):
+    return self.w * self.h
+
+  def expand(self, border):
+    box = CroppingBox(
+      x=self.x+border,
+      y=self.y+border,
+      w=self.w,
+      h=self.h,
+    )
+    print("Expanding borders of {0} by {1} pixels".format(self, border))
+    return box
+
+  def getCorners(self):
+    return {
+      "min_x": self.x,
+      "max_x": self.x+self.w,
+      "min_y": self.y,
+      "max_y": self.y+self.h,
+    }
+
+  def __str__(self):
+    return "<CroppingBox(area={0}, w={1}, h={2}, upper_left={3}, lower_right={4})>".format(
+      self.area(),
+      self.w,
+      self.h,
+      (self.x, self.y),
+      (self.x+self.w, self.y+self.h),
+    )
+
+
 def img2bounding_box(url, border_reduction):
   #scale_exponent = 4
   archiver = IntermediateImageSaver(
@@ -88,33 +126,33 @@ def img2bounding_box(url, border_reduction):
   )
   blank_image_contours = np.zeros(img.shape, np.uint8)
   blank_image = np.zeros(img.shape, np.uint8)
+
   next_countour_indices = hierarchy[0,:,0]
   next_index = 0
-  i = 0
   bounding_boxes = []
   while next_index != -1:
-    i += 1
     c = contours[next_index]
     cv2.drawContours(blank_image_contours, c, -1, (255, 0, 0), 5)
-    rect = cv2.boundingRect(c)
-    x,y,w,h = rect
+    x,y,w,h = cv2.boundingRect(c)
+    box = CroppingBox(x=x, y=y, w=w, h=h)
     
     # scale up these coordinates to their original size
-    if w*h > 22179:
-      min_x = x + border_reduction
-      min_y = y + border_reduction
-      max_x = min_x + w
-      max_y = min_y + h
-      cropper(min_x=min_x, max_x=max_x, min_y=min_y, max_y=max_y)
+    if box.area() > 22179:
+      box = box.expand(border_reduction)
+      print(box)
 
-      bounding_boxes.append((min_x, max_x, min_y, max_y))
+      cropper(**box.getCorners())
+      bounding_boxes.append(box)
 
-      print("Size: {0}  | ".format(w*h), (x,y), (x+w, y+h), (w, h))
-      cv2.rectangle(blank_image, (x,y), (x+w,y+h), (r(), r(), r()), 10)
+      lx = box.x
+      ly = box.y
+      rx = lx+box.w
+      ry = ly+box.h
+      cv2.rectangle(blank_image, (lx, ly), (rx, ry), (r(), r(), r()), 10)
 
     next_index = next_countour_indices[next_index]
 
-  print("Number of detected objects: {0}".format(i))
+  print("Number of detected objects: {0}".format(len(bounding_boxes)))
   archiver(blank_image_contours, "contours")
   archiver(blank_image, "bounding_boxes")
 
