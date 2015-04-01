@@ -1,9 +1,5 @@
 # Doug McGeehan (djmvfb@mst.edu)
 import sys
-if len(sys.argv) < 3:
-  print("ERROR: must include the path to the obverse and reverse images as parameters")
-  sys.exit(1)
-
 import os
 import time
 import httplib
@@ -35,17 +31,19 @@ def upload_image_to_url(addr, port, upload_url, img_url):
 if __name__ == "__main__":
   obverse_img = sys.argv[1]
   print("Obverse image: {0}".format(obverse_img))
-  reverse_img = sys.argv[2]
-  print("Reverse image: {0}".format(reverse_img))
 
   upload_image_to_url(
     addr=SERVER_ADDR, port=SERVER_PORT, upload_url=SERVER_PATH,
     img_url=obverse_img,
   )
   print("Obverse image uploaded, sleeping for 10 seconds")
-  raw_input("Press Enter to continue...")
-  upload_image_to_url(
-    addr=SERVER_ADDR, port=SERVER_PORT, upload_url=SERVER_PATH,
-    img_url=reverse_img,
-  )
-  print("Reverse image uploaded.")
+
+  if len(sys.argv) == 3:
+    reverse_img = sys.argv[2]
+    print("Reverse image: {0}".format(reverse_img))
+    raw_input("Press Enter to continue...")
+    upload_image_to_url(
+      addr=SERVER_ADDR, port=SERVER_PORT, upload_url=SERVER_PATH,
+      img_url=reverse_img,
+    )
+    print("Reverse image uploaded.")
