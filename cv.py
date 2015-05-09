@@ -45,8 +45,10 @@ class ImageCropper:
 
   def __call__(self, min_x, max_x, min_y, max_y):
     cropped_img = self.img[min_y:max_y, min_x:max_x]
-    cv2.imwrite("cropped/{0}_{1}.png".format(self.n, self.filename), cropped_img)
+    cropped_img_url = "cropped/{0}_{1}.png".format(self.n, self.filename)
+    cv2.imwrite(cropped_img_url, cropped_img)
     self.n += 1
+    return cropped_img_url
 
 
 class CroppingBox:
@@ -55,6 +57,7 @@ class CroppingBox:
     self.y = y
     self.w = w
     self.h = h
+    self.centroid = (x + (w/2), y + (h/2))
 
   def area(self):
     return self.w * self.h
@@ -87,12 +90,30 @@ class CroppingBox:
     )
 
 
+class SplitScan:
+  def __init__(self):
+    self.boxes = []
+    self.split_imgs  = []
+
+  def add(self, box, img):
+    self.boxes.append(box)
+    self.split_imgs.append(img)
+
+  def __iter__(self):
+    for i in xrange(len(self.boxes)):
+      yield (self.boxes[i], self.split_imgs[i])
+
+  def __len__(self):
+    return len(self.boxes)
+
+
 def img2bounding_box(url, border_reduction):
   #scale_exponent = 4
   archiver = IntermediateImageSaver(
     prefix=os.path.basename(url).split(".")[0]
   )
   cropper = ImageCropper(url)
+  split = SplitScan()
 
   img = cv2.imread(url)
 
@@ -129,7 +150,6 @@ def img2bounding_box(url, border_reduction):
 
   next_countour_indices = hierarchy[0,:,0]
   next_index = 0
-  bounding_boxes = []
   while next_index != -1:
     c = contours[next_index]
     cv2.drawContours(blank_image_contours, c, -1, (255, 0, 0), 5)
@@ -141,8 +161,8 @@ def img2bounding_box(url, border_reduction):
       box = box.expand(border_reduction)
       print(box)
 
-      cropper(**box.getCorners())
-      bounding_boxes.append(box)
+      img = cropper(**box.getCorners())
+      split.add(box=box, img=img)
 
       lx = box.x
       ly = box.y
@@ -152,11 +172,11 @@ def img2bounding_box(url, border_reduction):
 
     next_index = next_countour_indices[next_index]
 
-  print("Number of detected objects: {0}".format(len(bounding_boxes)))
+  print("Number of detected objects: {0}".format(len(split)))
   archiver(blank_image_contours, "contours")
   archiver(blank_image, "bounding_boxes")
 
-  return bounding_boxes
+  return split
 
 
 if __name__ == "__main__":
@@ -165,6 +185,8 @@ if __name__ == "__main__":
     "sample/001.tiff": 8,
     "sample/002.tiff": 1,
     "sample/003.tiff": 1,
+    "sample/2015-05-08_1.tiff": 5,
+    "sample/2015-05-08_2.tiff": 5,
   }
 
   border_reduction = 50
@@ -177,4 +199,3 @@ if __name__ == "__main__":
           os.path.basename(url), testing_samples[url], len(boxes)
       ))
 
-    
