@@ -90,21 +90,27 @@ class CroppingBox:
     )
 
 
+class ImageFromScan:
+  def __init__(self, box, img):
+    self.url = img
+    self.box = box
+    self.h = box.h
+    self.w = box.w
+
+
 class SplitScan:
   def __init__(self):
-    self.boxes = []
     self.split_imgs  = []
 
   def add(self, box, img):
-    self.boxes.append(box)
-    self.split_imgs.append(img)
+    self.split_imgs.append(ImageFromScan(box=box, img=img))
 
   def __iter__(self):
-    for i in xrange(len(self.boxes)):
-      yield (self.boxes[i], self.split_imgs[i])
+    for i in self.split_imgs:
+      yield i
 
   def __len__(self):
-    return len(self.boxes)
+    return len(self.split_imgs)
 
 
 def img2bounding_box(url, border_reduction):

@@ -1,7 +1,64 @@
 from cv import img2bounding_box
+from PIL import Image
+from datetime import datetime
 
-def merge(img1, img2):
-  pass
+"""
+images = map(Image.open, sys.argv[1:-1])
+w = sum(i.size[0] for i in images)
+mh = max(i.size[1] for i in images)
+
+result = Image.new("RGBA", (w, mh))
+
+x = 0
+for i in images:
+  result.paste(i, (x, 0))
+  x += i.size[0]
+
+result.save(sys.argv[-1])
+"""
+
+WHITE = (255, 255, 255)
+
+
+class Merger:
+  def __init__(self):
+    self.n = 0
+
+  def __call__(self, img1, img2):
+    # If the aspect ratio of one of the images is less than 1, with some wiggle 
+    #  room, then the two files will be vertically merged. Otherwise, horizontal
+    #  merging.
+    if (img1.h / float(img1.w)) < 0.95:
+      result = verticalMerge(img1, img2)
+
+    else:
+      result = horizontalMerge(img1, img2)
+
+    url_safe_datetime = datetime.now().strftime("%Y-%m-%d %H-%M-%S")
+    merged_url = "merged/{0}_{1}.jpg".format(url_safe_datetime, self.n)
+    self.n += 1
+    result.save(merged_url)
+    return merged_url
+
+
+def verticalMerge(img1, img2):
+  print("Vertical merging of {0} and {1}".format(img1.url, img2.url))
+  max_width = max(img1.w, img2.w)
+  concatenated_height = img1.h + img2.h
+  result = Image.new("RGBA", (max_width, concatenated_height), color=WHITE)
+  result.paste(Image.open(img1.url), (0, 0))
+  result.paste(Image.open(img2.url), (0, img1.h))
+  return result
+
+
+def horizontalMerge(img1, img2):
+  print("Horizontal merging of {0} and {1}".format(img1.url, img2.url))
+  max_height = max(img1.h, img2.h)
+  concatenated_width = img1.w + img2.w
+  result = Image.new("RGBA", (concatenated_width, max_height), color=WHITE)
+  result.paste(Image.open(img1.url), (0, 0))
+  result.paste(Image.open(img2.url), (img1.w, 0))
+  return result
 
 
 if __name__ == "__main__":
@@ -14,13 +71,12 @@ if __name__ == "__main__":
   for (url1, url2) in testing_samples:
     side1 = img2bounding_box(url=url1, border_reduction=border_reduction)
     side2 = img2bounding_box(url=url2, border_reduction=border_reduction)
+    merge = Merger()
 
-    for ingot1, ingot2 in zip(side1, side2)
-      img1 = ingot1[0]
-      img2 = ingot2[0]
-      merged = merge(img1, img2)
+    for ingot1, ingot2 in zip(side1, side2):
+      merged = merge(ingot1, ingot2)
       print("#"*80)
-      print("{0} and {1} => {2}".format(img1, img2, merged))
+      print("{0} and {1} => {2}".format(ingot1.url, ingot2.url, merged))
       print("#"*80)
 
     if len(side2) != len(side1):
