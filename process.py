@@ -1,21 +1,19 @@
+import logging
 from cv import img2bounding_box
 from PIL import Image
 from datetime import datetime
 
-"""
-images = map(Image.open, sys.argv[1:-1])
-w = sum(i.size[0] for i in images)
-mh = max(i.size[1] for i in images)
+import logging
+logging.basicConfig(
+  level=logging.DEBUG,
+  filename='/tmp/pi-scanner_{0}.log'.format(datetime.now().date()),
+  filemode='w'
+)
+logger = logging.getLogger("pi-coin-scanner")
+stdout = logging.StreamHandler()
+stdout.setLevel(logging.DEBUG)
+logger.addHandler(stdout)
 
-result = Image.new("RGBA", (w, mh))
-
-x = 0
-for i in images:
-  result.paste(i, (x, 0))
-  x += i.size[0]
-
-result.save(sys.argv[-1])
-"""
 
 WHITE = (255, 255, 255)
 
@@ -42,7 +40,7 @@ class Merger:
 
 
 def verticalMerge(img1, img2):
-  print("Vertical merging of {0} and {1}".format(img1.url, img2.url))
+  logger.info("Vertical merging of {0} and {1}".format(img1.url, img2.url))
   max_width = max(img1.w, img2.w)
   concatenated_height = img1.h + img2.h
   result = Image.new("RGBA", (max_width, concatenated_height), color=WHITE)
@@ -52,7 +50,7 @@ def verticalMerge(img1, img2):
 
 
 def horizontalMerge(img1, img2):
-  print("Horizontal merging of {0} and {1}".format(img1.url, img2.url))
+  logger.info("Horizontal merging of {0} and {1}".format(img1.url, img2.url))
   max_height = max(img1.h, img2.h)
   concatenated_width = img1.w + img2.w
   result = Image.new("RGBA", (concatenated_width, max_height), color=WHITE)
@@ -76,11 +74,11 @@ if __name__ == "__main__":
     for ingot1, ingot2 in zip(side1, side2):
       merged = merge(ingot1, ingot2)
       print("#"*80)
-      print("{0} and {1} => {2}".format(ingot1.url, ingot2.url, merged))
+      logger.info("{0} and {1} => {2}".format(ingot1.url, ingot2.url, merged))
       print("#"*80)
 
     if len(side2) != len(side1):
-      print(
+      logger.error(
         "For the two scans, the number of split images is not equal "
         "({0} vs {1})".format(
           len(side1), len(side2)

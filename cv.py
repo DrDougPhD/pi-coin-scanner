@@ -4,7 +4,11 @@ import numpy as np
 import sys
 from matplotlib import pyplot as plt
 import random
+import logging
 r = lambda: random.randint(0,255)
+
+logger = logging.getLogger("pi-coin-scanner.cv")
+
 
 class SimplePlot:
   def __init__(self, shrink_factor=None):
@@ -69,7 +73,7 @@ class CroppingBox:
       w=self.w,
       h=self.h,
     )
-    print("Expanding borders of {0} by {1} pixels".format(self, border))
+    logger.debug("Expanding borders of {0} by {1} pixels".format(self, border))
     return box
 
   def getCorners(self):
@@ -114,7 +118,7 @@ class SplitScan:
 
 
 def img2bounding_box(url, border_reduction):
-  #scale_exponent = 4
+  assert os.path.exists(url), "There exists no file {0}".format(url)
   archiver = IntermediateImageSaver(
     prefix=os.path.basename(url).split(".")[0]
   )
@@ -165,7 +169,7 @@ def img2bounding_box(url, border_reduction):
     # scale up these coordinates to their original size
     if box.area() > 22179:
       box = box.expand(border_reduction)
-      print(box)
+      logger.debug(box)
 
       img = cropper(**box.getCorners())
       split.add(box=box, img=img)
@@ -178,7 +182,7 @@ def img2bounding_box(url, border_reduction):
 
     next_index = next_countour_indices[next_index]
 
-  print("Number of detected objects: {0}".format(len(split)))
+  logger.info("Number of detected objects: {0}".format(len(split)))
   archiver(blank_image_contours, "contours")
   archiver(blank_image, "bounding_boxes")
 
@@ -199,7 +203,7 @@ if __name__ == "__main__":
   for url in testing_samples:
     boxes = img2bounding_box(url=url, border_reduction=border_reduction)
     if len(boxes) != testing_samples[url]:
-      print(
+      logger.error(
         "For {0}, the expected number of bounding boxes ({1}) did not equal"
         " the actual number ({2})".format(
           os.path.basename(url), testing_samples[url], len(boxes)
