@@ -1,4 +1,5 @@
 import logging
+import os
 from cv import img2bounding_box
 from PIL import Image
 from datetime import datetime
@@ -16,6 +17,7 @@ logger.addHandler(stdout)
 
 
 WHITE = (255, 255, 255)
+MERGED_OUTPUT_DIRECTORY = "merged"
 
 
 class Merger:
@@ -33,7 +35,9 @@ class Merger:
       result = horizontalMerge(img1, img2)
 
     url_safe_datetime = datetime.now().strftime("%Y-%m-%d %H-%M-%S")
-    merged_url = "merged/{0}_{1}.jpg".format(url_safe_datetime, self.n)
+    merged_url = os.path.join(
+      MERGED_OUTPUT_DIRECTORY, "{0}_{1}.jpg".format(url_safe_datetime, self.n)
+    )
     self.n += 1
     result.save(merged_url)
     return merged_url
@@ -66,15 +70,29 @@ if __name__ == "__main__":
   ]
 
   border_reduction = 50
+  if not os.path.exists(MERGED_OUTPUT_DIRECTORY):
+    os.makedirs(MERGED_OUTPUT_DIRECTORY)
+
   for (url1, url2) in testing_samples:
+    start = datetime.now()
     side1 = img2bounding_box(url=url1, border_reduction=border_reduction)
+    duration = datetime.now() - start
+    logger.info("Splitting time: {0}".format(duration))
+
+    start = datetime.now()
     side2 = img2bounding_box(url=url2, border_reduction=border_reduction)
+    duration = datetime.now() - start
+    logger.info("Splitting time: {0}".format(duration))
+
     merge = Merger()
 
     for ingot1, ingot2 in zip(side1, side2):
+      start = datetime.now()
       merged = merge(ingot1, ingot2)
+      duration = datetime.now() - start
       print("#"*80)
       logger.info("{0} and {1} => {2}".format(ingot1.url, ingot2.url, merged))
+      logger.info("Merging time: {0}".format(duration))
       print("#"*80)
 
     if len(side2) != len(side1):

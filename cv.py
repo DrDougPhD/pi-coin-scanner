@@ -2,13 +2,15 @@ import os
 import cv2
 import numpy as np
 import sys
-from matplotlib import pyplot as plt
+#from matplotlib import pyplot as plt
 import random
 import logging
 r = lambda: random.randint(0,255)
 
 logger = logging.getLogger("pi-coin-scanner.cv")
 
+INTERMEDIATE_IMAGE_DIRECTORY = "intermediate"
+CROPPED_IMAGE_DIRECTORY = "cropped"
 
 class SimplePlot:
   def __init__(self, shrink_factor=None):
@@ -29,14 +31,19 @@ class IntermediateImageSaver:
     self.prefix = prefix
     self.scale = scale
 
+    if not os.path.exists(INTERMEDIATE_IMAGE_DIRECTORY):
+      os.makedirs(INTERMEDIATE_IMAGE_DIRECTORY)
+
   def __call__(self, img, name):
     if self.scale is not None:
       for i in range(self.scale):
         img = cv2.pyrUp(img)
 
     cv2.imwrite(
-      "intermediate/{0}_{1}_{2}.png".format(self.prefix, self.n, name),
-      img
+      os.path.join(
+        INTERMEDIATE_IMAGE_DIRECTORY,
+        "{0}_{1}_{2}.png".format(self.prefix, self.n, name)
+      ), img
     )
     self.n += 1
 
@@ -47,9 +54,14 @@ class ImageCropper:
     self.img = cv2.imread(original_file)
     self.n = 0
 
+    if not os.path.exists(CROPPED_IMAGE_DIRECTORY):
+      os.makedirs(CROPPED_IMAGE_DIRECTORY)
+
   def __call__(self, min_x, max_x, min_y, max_y):
     cropped_img = self.img[min_y:max_y, min_x:max_x]
-    cropped_img_url = "cropped/{0}_{1}.png".format(self.n, self.filename)
+    cropped_img_url = os.path.join(
+      CROPPED_IMAGE_DIRECTORY, "{0}_{1}.png".format(self.n, self.filename)
+    )
     cv2.imwrite(cropped_img_url, cropped_img)
     self.n += 1
     return cropped_img_url
