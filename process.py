@@ -5,24 +5,19 @@ from PIL import Image
 from datetime import datetime
 
 import logging
-logging.basicConfig(
-  level=logging.DEBUG,
-  filename='/tmp/pi-scanner_{0}.log'.format(datetime.now().date()),
-  filemode='w'
-)
 logger = logging.getLogger("pi-coin-scanner")
-stdout = logging.StreamHandler()
-stdout.setLevel(logging.DEBUG)
-logger.addHandler(stdout)
-
 
 WHITE = (255, 255, 255)
-MERGED_OUTPUT_DIRECTORY = "merged"
 
 
 class Merger:
-  def __init__(self):
+  def __init__(self, dest):
     self.n = 0
+    self.results = []
+    self.dest = dest
+
+    if not os.path.exists(dest):
+      os.makedirs(dest)
 
   def __call__(self, img1, img2):
     # If the aspect ratio of one of the images is less than 1, with some wiggle 
@@ -36,10 +31,12 @@ class Merger:
 
     url_safe_datetime = datetime.now().strftime("%Y-%m-%d %H-%M-%S")
     merged_url = os.path.join(
-      MERGED_OUTPUT_DIRECTORY, "{0}_{1}.jpg".format(url_safe_datetime, self.n)
+      self.dest, "{0}_{1}.jpg".format(url_safe_datetime, self.n)
     )
     self.n += 1
     result.save(merged_url)
+
+    self.results.append(merged_url)
     return merged_url
 
 
@@ -63,42 +60,48 @@ def horizontalMerge(img1, img2):
   return result
 
 
+def splitAndMerge(obverse, reverse, destination):
+  merge = Merger(destination)
+
+  for ingot1, ingot2 in zip(obverse, reverse):
+    start = datetime.now()
+    merged = merge(ingot1, ingot2)
+    duration = datetime.now() - start
+    print("#"*80)
+    logger.info("{0} and {1} => {2}".format(ingot1.url, ingot2.url, merged))
+    logger.info("Merging time: {0}".format(duration))
+    print("#"*80)
+
+  if len(obverse) != len(reverse):
+    logger.error(
+      "For the two scans, the number of split images is not equal "
+      "({0} vs {1})".format(
+        len(obverse), len(reverse)
+    ))
+
+  return merge.results
+
+
 if __name__ == "__main__":
+  MERGED_OUTPUT_DIRECTORY = "merged"
+  logging.basicConfig(
+    level=logging.DEBUG,
+    filename='/tmp/pi-scanner_{0}.log'.format(datetime.now().date()),
+    filemode='w'
+  )
+  stdout = logging.StreamHandler()
+  stdout.setLevel(logging.DEBUG)
+  logger.addHandler(stdout)
+
   testing_samples = [
     ("sample/002.tiff", "sample/003.tiff"),
     ("sample/2015-05-08_1.tiff", "sample/2015-05-08_2.tiff")
   ]
 
   border_reduction = 50
-  if not os.path.exists(MERGED_OUTPUT_DIRECTORY):
-    os.makedirs(MERGED_OUTPUT_DIRECTORY)
 
   for (url1, url2) in testing_samples:
-    start = datetime.now()
     side1 = img2bounding_box(url=url1, border_reduction=border_reduction)
-    duration = datetime.now() - start
-    logger.info("Splitting time: {0}".format(duration))
-
-    start = datetime.now()
     side2 = img2bounding_box(url=url2, border_reduction=border_reduction)
-    duration = datetime.now() - start
-    logger.info("Splitting time: {0}".format(duration))
-
-    merge = Merger()
-
-    for ingot1, ingot2 in zip(side1, side2):
-      start = datetime.now()
-      merged = merge(ingot1, ingot2)
-      duration = datetime.now() - start
-      print("#"*80)
-      logger.info("{0} and {1} => {2}".format(ingot1.url, ingot2.url, merged))
-      logger.info("Merging time: {0}".format(duration))
-      print("#"*80)
-
-    if len(side2) != len(side1):
-      logger.error(
-        "For the two scans, the number of split images is not equal "
-        "({0} vs {1})".format(
-          len(side1), len(side2)
-      ))
+    results = splitAndMerge(side1, side2, MERGED_OUTPUT_DIRECTORY)
 

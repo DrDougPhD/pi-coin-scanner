@@ -3,14 +3,13 @@ import cv2
 import numpy as np
 import sys
 #from matplotlib import pyplot as plt
+from datetime import datetime
 import random
 import logging
-r = lambda: random.randint(0,255)
+r = lambda: random.randint(0, 255)
 
 logger = logging.getLogger("pi-coin-scanner.cv")
 
-INTERMEDIATE_IMAGE_DIRECTORY = "intermediate"
-CROPPED_IMAGE_DIRECTORY = "cropped"
 
 class SimplePlot:
   def __init__(self, shrink_factor=None):
@@ -26,13 +25,14 @@ class SimplePlot:
 
 
 class IntermediateImageSaver:
-  def __init__(self, prefix, scale=None):
+  def __init__(self, prefix, dest, scale=None):
     self.n = 1
     self.prefix = prefix
+    self.dest = dest
     self.scale = scale
 
-    if not os.path.exists(INTERMEDIATE_IMAGE_DIRECTORY):
-      os.makedirs(INTERMEDIATE_IMAGE_DIRECTORY)
+    if not os.path.exists(dest):
+      os.makedirs(dest)
 
   def __call__(self, img, name):
     if self.scale is not None:
@@ -41,7 +41,7 @@ class IntermediateImageSaver:
 
     cv2.imwrite(
       os.path.join(
-        INTERMEDIATE_IMAGE_DIRECTORY,
+        self.dest,
         "{0}_{1}_{2}.png".format(self.prefix, self.n, name)
       ), img
     )
@@ -49,18 +49,19 @@ class IntermediateImageSaver:
 
 
 class ImageCropper:
-  def __init__(self, original_file):
+  def __init__(self, original_file, dest):
+    self.dest = dest
     self.filename = os.path.basename(original_file).split(".")[0]
     self.img = cv2.imread(original_file)
     self.n = 0
 
-    if not os.path.exists(CROPPED_IMAGE_DIRECTORY):
-      os.makedirs(CROPPED_IMAGE_DIRECTORY)
+    if not os.path.exists(dest):
+      os.makedirs(dest)
 
   def __call__(self, min_x, max_x, min_y, max_y):
     cropped_img = self.img[min_y:max_y, min_x:max_x]
     cropped_img_url = os.path.join(
-      CROPPED_IMAGE_DIRECTORY, "{0}_{1}.png".format(self.n, self.filename)
+      self.dest, "{0}_{1}.png".format(self.n, self.filename)
     )
     cv2.imwrite(cropped_img_url, cropped_img)
     self.n += 1
@@ -129,12 +130,17 @@ class SplitScan:
     return len(self.split_imgs)
 
 
-def img2bounding_box(url, border_reduction):
+def img2bounding_box(url, intermediate_destination, cropped_destination, border_reduction):
   assert os.path.exists(url), "There exists no file {0}".format(url)
+
+  start = datetime.now()
+
+
   archiver = IntermediateImageSaver(
-    prefix=os.path.basename(url).split(".")[0]
+    prefix=os.path.basename(url).split(".")[0],
+    dest=intermediate_destination,
   )
-  cropper = ImageCropper(url)
+  cropper = ImageCropper(url, dest=cropped_destination)
   split = SplitScan()
 
   img = cv2.imread(url)
@@ -198,10 +204,15 @@ def img2bounding_box(url, border_reduction):
   archiver(blank_image_contours, "contours")
   archiver(blank_image, "bounding_boxes")
 
+  duration = datetime.now() - start
+  logger.info("Splitting time: {0}".format(duration))
+
   return split
 
 
 if __name__ == "__main__":
+  INTERMEDIATE_IMAGE_DIRECTORY = "intermediate"
+  CROPPED_IMAGE_DIRECTORY = "cropped"
   testing_samples = {
     "sample/white_background.tiff": 6,
     "sample/001.tiff": 8,
@@ -213,7 +224,12 @@ if __name__ == "__main__":
 
   border_reduction = 50
   for url in testing_samples:
-    boxes = img2bounding_box(url=url, border_reduction=border_reduction)
+    boxes = img2bounding_box(
+      url=url,
+      intermediate_destination=INTERMEDIATE_IMAGE_DIRECTORY,
+      cropped_destination=CROPPED_IMAGE_DIRECTORY,
+      border_reduction=border_reduction,
+    )
     if len(boxes) != testing_samples[url]:
       logger.error(
         "For {0}, the expected number of bounding boxes ({1}) did not equal"
