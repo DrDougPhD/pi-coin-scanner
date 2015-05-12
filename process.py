@@ -63,6 +63,8 @@ def horizontalMerge(img1, img2):
 def splitAndMerge(obverse, reverse, destination):
   merge = Merger(destination)
 
+  obverse.reorderByMinimumDistance(reverse)
+
   for ingot1, ingot2 in zip(obverse, reverse):
     start = datetime.now()
     merged = merge(ingot1, ingot2)
@@ -84,6 +86,9 @@ def splitAndMerge(obverse, reverse, destination):
 
 if __name__ == "__main__":
   MERGED_OUTPUT_DIRECTORY = "merged"
+  INTERMEDIATE_IMAGE_DIRECTORY = "intermediate"
+  CROPPED_IMAGE_DIRECTORY = "cropped"
+
   logging.basicConfig(
     level=logging.DEBUG,
     filename='/tmp/pi-scanner_{0}.log'.format(datetime.now().date()),
@@ -94,14 +99,23 @@ if __name__ == "__main__":
   logger.addHandler(stdout)
 
   testing_samples = [
-    ("sample/002.tiff", "sample/003.tiff"),
-    ("sample/2015-05-08_1.tiff", "sample/2015-05-08_2.tiff")
+    ("sample/2015-05-12_4.tiff", "sample/2015-05-12_5.tiff"),
+    #("sample/002.tiff", "sample/003.tiff"),
+    #("sample/2015-05-08_1.tiff", "sample/2015-05-08_2.tiff")
   ]
 
   border_reduction = 50
 
   for (url1, url2) in testing_samples:
-    side1 = img2bounding_box(url=url1, border_reduction=border_reduction)
-    side2 = img2bounding_box(url=url2, border_reduction=border_reduction)
+    side1 = img2bounding_box(
+      url=url1, border_reduction=border_reduction,
+      intermediate_destination=INTERMEDIATE_IMAGE_DIRECTORY,
+      cropped_destination=CROPPED_IMAGE_DIRECTORY,
+    )
+    side2 = img2bounding_box(
+      url=url2, border_reduction=border_reduction,
+      intermediate_destination=INTERMEDIATE_IMAGE_DIRECTORY,
+      cropped_destination=CROPPED_IMAGE_DIRECTORY,
+    )
     results = splitAndMerge(side1, side2, MERGED_OUTPUT_DIRECTORY)
 

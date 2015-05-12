@@ -74,7 +74,7 @@ class CroppingBox:
     self.y = y
     self.w = w
     self.h = h
-    self.centroid = (x + (w/2), y + (h/2))
+    self.centroid = np.array([x + (w/2), y + (h/2)])
 
   def area(self):
     return self.w * self.h
@@ -121,6 +121,19 @@ class SplitScan:
 
   def add(self, box, img):
     self.split_imgs.append(ImageFromScan(box=box, img=img))
+
+  def reorderByMinimumDistance(self, other_split_scan):
+    original_images = list(self.split_imgs)
+    reordered_images = []
+    for img in other_split_scan:
+      distance = lambda i: np.linalg.norm(i.box.centroid-img.box.centroid)
+      i = min(original_images, key=distance)
+      logger.debug("{0} distance between\n\t{1} and\n\t {2}".format(
+        distance(i), img.box, i.box
+      ))
+      reordered_images.append(i)
+      original_images.remove(i)
+    self.split_imgs = reordered_images
 
   def __iter__(self):
     for i in self.split_imgs:

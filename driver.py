@@ -10,6 +10,7 @@ import subprocess
 import os
 from unique_files import create_unique_filename
 from binarystate import BinaryState
+from trinarystate import TrinaryState
 from cv import img2bounding_box
 from process import splitAndMerge
 
@@ -90,23 +91,6 @@ def ingotscan(is_reverse):
   return uri
 
 
-class TrinaryState:
-  def __init__(self, init_state=0):
-    self.state = init_state
-
-  def transition_to_next_state(self):
-    self.state = (self.state+1) % 3
-
-  def is_initial_state(self):
-    return (self.state == 0)
-
-  def is_middle_state(self):
-    return (self.state == 1)
-
-  def is_ending_state(self):
-    return (self.state == 2)
-
-
 if __name__ == "__main__":
   os.setgid(1000)
   os.setuid(1000)
@@ -173,5 +157,4 @@ if __name__ == "__main__":
 
     toggle.set(b)
     state.set(i)
-
 
