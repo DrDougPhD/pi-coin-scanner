@@ -7,6 +7,7 @@ from datetime import datetime
 import random
 import logging
 r = lambda: random.randint(0, 255)
+random_color = lambda: (r(), r(), r())
 
 logger = logging.getLogger("pi-coin-scanner.cv")
 
@@ -204,11 +205,9 @@ def img2bounding_box(url, intermediate_destination, cropped_destination, border_
       img = cropper(**box.getCorners())
       split.add(box=box, img=img)
 
-      lx = box.x
-      ly = box.y
-      rx = lx+box.w
-      ry = ly+box.h
-      cv2.rectangle(blank_image, (lx, ly), (rx, ry), (r(), r(), r()), 10)
+      upper_left  = box.x, box.y
+      lower_right = box.x+box.w, box.y+box.h
+      cv2.rectangle(blank_image, upper_left, lower_right, random_color(), 10)
 
     next_index = next_countour_indices[next_index]
 
