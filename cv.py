@@ -7,6 +7,7 @@ from datetime import datetime
 import random
 import logging
 r = lambda: random.randint(0, 255)
+random_color = lambda: (r(), r(), r())
 
 logger = logging.getLogger("pi-coin-scanner.cv")
 
@@ -148,7 +149,6 @@ def img2bounding_box(url, intermediate_destination, cropped_destination, border_
 
   start = datetime.now()
 
-
   archiver = IntermediateImageSaver(
     prefix=os.path.basename(url).split(".")[0],
     dest=intermediate_destination,
@@ -205,11 +205,9 @@ def img2bounding_box(url, intermediate_destination, cropped_destination, border_
       img = cropper(**box.getCorners())
       split.add(box=box, img=img)
 
-      lx = box.x
-      ly = box.y
-      rx = lx+box.w
-      ry = ly+box.h
-      cv2.rectangle(blank_image, (lx, ly), (rx, ry), (r(), r(), r()), 10)
+      upper_left  = box.x, box.y
+      lower_right = box.x+box.w, box.y+box.h
+      cv2.rectangle(blank_image, upper_left, lower_right, random_color(), 10)
 
     next_index = next_countour_indices[next_index]
 
@@ -226,27 +224,40 @@ def img2bounding_box(url, intermediate_destination, cropped_destination, border_
 if __name__ == "__main__":
   INTERMEDIATE_IMAGE_DIRECTORY = "intermediate"
   CROPPED_IMAGE_DIRECTORY = "cropped"
-  testing_samples = {
-    "sample/white_background.tiff": 6,
-    "sample/001.tiff": 8,
-    "sample/002.tiff": 1,
-    "sample/003.tiff": 1,
-    "sample/2015-05-08_1.tiff": 5,
-    "sample/2015-05-08_2.tiff": 5,
-  }
-
   border_reduction = 50
-  for url in testing_samples:
+
+  logging.basicConfig(
+    level=logging.DEBUG,
+  )
+
+  if len(sys.argv) < 2:
+    testing_samples = {
+      "sample/white_background.tiff": 6,
+      "sample/001.tiff": 8,
+      "sample/002.tiff": 1,
+      "sample/003.tiff": 1,
+      "sample/2015-05-08_1.tiff": 5,
+      "sample/2015-05-08_2.tiff": 5,
+    }
+
+    for url in testing_samples:
+      boxes = img2bounding_box(
+        url=url,
+        intermediate_destination=INTERMEDIATE_IMAGE_DIRECTORY,
+        cropped_destination=CROPPED_IMAGE_DIRECTORY,
+        border_reduction=border_reduction,
+      )
+      if len(boxes) != testing_samples[url]:
+        logger.error(
+          "For {0}, the expected number of bounding boxes ({1}) did not equal"
+          " the actual number ({2})".format(
+            os.path.basename(url), testing_samples[url], len(boxes)
+        ))
+
+  else:
     boxes = img2bounding_box(
-      url=url,
+      url=sys.argv[1],
       intermediate_destination=INTERMEDIATE_IMAGE_DIRECTORY,
       cropped_destination=CROPPED_IMAGE_DIRECTORY,
       border_reduction=border_reduction,
     )
-    if len(boxes) != testing_samples[url]:
-      logger.error(
-        "For {0}, the expected number of bounding boxes ({1}) did not equal"
-        " the actual number ({2})".format(
-          os.path.basename(url), testing_samples[url], len(boxes)
-      ))
-
