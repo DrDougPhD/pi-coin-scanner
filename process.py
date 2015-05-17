@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 from cv import img2bounding_box
 from PIL import Image
 from datetime import datetime
@@ -88,6 +89,7 @@ if __name__ == "__main__":
   MERGED_OUTPUT_DIRECTORY = "merged"
   INTERMEDIATE_IMAGE_DIRECTORY = "intermediate"
   CROPPED_IMAGE_DIRECTORY = "cropped"
+  border_reduction = 50
 
   logging.basicConfig(
     level=logging.DEBUG,
@@ -98,13 +100,17 @@ if __name__ == "__main__":
   stdout.setLevel(logging.DEBUG)
   logger.addHandler(stdout)
 
-  testing_samples = [
-    ("sample/2015-05-12_4.tiff", "sample/2015-05-12_5.tiff"),
-    #("sample/002.tiff", "sample/003.tiff"),
-    #("sample/2015-05-08_1.tiff", "sample/2015-05-08_2.tiff")
-  ]
+  if len(sys.argv) < 3:
+    testing_samples = [
+      ("sample/2015-05-12_4.tiff", "sample/2015-05-12_5.tiff"),
+      #("sample/002.tiff", "sample/003.tiff"),
+      #("sample/2015-05-08_1.tiff", "sample/2015-05-08_2.tiff")
+    ]
+  else:
+    testing_samples = [
+      sys.argv[1:]
+    ]
 
-  border_reduction = 50
 
   for (url1, url2) in testing_samples:
     side1 = img2bounding_box(

@@ -145,7 +145,7 @@ if __name__ == "__main__":
       # Perform a simple scan.
       if state.has_changed(i) and i:
         logger.info("Simple scan")
-        #simplescan()
+        simplescan()
 
 
     if toggle.has_changed(b):
